@@ -7,6 +7,8 @@ from django.db import models, transaction
 from django.db.models import Count, Q
 from django.utils import timezone
 
+from core.permissions import LOCAL_ROLE_COORDINATOR, LOCAL_ROLE_MEMBER
+
 
 class Club(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -15,15 +17,6 @@ class Club(models.Model):
     description = models.TextField(max_length=400)
     contact_email = models.EmailField()
     is_active = models.BooleanField(default=True)
-    representatives = models.ManyToManyField(
-        "accounts.User", related_name="represented_clubs", blank=True
-    )
-    followers = models.ManyToManyField(
-        "accounts.User",
-        through="clubs_events.ClubFollow",
-        related_name="followed_clubs",
-        blank=True,
-    )
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -34,18 +27,58 @@ class Club(models.Model):
         return self.name
 
     def can_be_managed_by(self, user) -> bool:
-        if not user.is_authenticated:
-            return False
-        if user.role in {user.Role.INSTITUTE_ADMIN, user.Role.SYSTEM_ADMIN}:
-            return True
-        return self.representatives.filter(pk=user.pk).exists()
+        from core.permissions import can_manage_club
+
+        return can_manage_club(user, self)
 
     @property
     def follower_count(self) -> int:
-        return self.followers.count()
+        return self.memberships.filter(status=ClubMembership.Status.ACTIVE).count()
+
+
+class ClubMembership(models.Model):
+    class Status(models.TextChoices):
+        ACTIVE = "active", "Active"
+        LEFT = "left", "Left"
+        REMOVED = "removed", "Removed"
+
+    class LocalRole(models.TextChoices):
+        MEMBER = LOCAL_ROLE_MEMBER, "Member"
+        SECRETARY = "secretary", "Club Secretary"
+        COORDINATOR = LOCAL_ROLE_COORDINATOR, "Club Coordinator"
+
+    club = models.ForeignKey(Club, on_delete=models.CASCADE, related_name="memberships")
+    user = models.ForeignKey(
+        "accounts.User", on_delete=models.CASCADE, related_name="club_memberships"
+    )
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.ACTIVE)
+    local_role = models.CharField(
+        max_length=16, choices=LocalRole.choices, default=LocalRole.MEMBER
+    )
+    joined_at = models.DateTimeField(default=timezone.now)
+    left_at = models.DateTimeField(null=True, blank=True)
+    assigned_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assigned_memberships",
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["club", "user"], name="unique_club_membership")
+        ]
+        ordering = ["-joined_at"]
+
+    def __str__(self) -> str:
+        return f"{self.user.username} @ {self.club.name} ({self.local_role}/{self.status})"
 
 
 class ClubFollow(models.Model):
+    """Deprecated compatibility model kept for legacy data/history."""
+
     club = models.ForeignKey(Club, on_delete=models.CASCADE, related_name="club_follows")
     user = models.ForeignKey(
         "accounts.User", on_delete=models.CASCADE, related_name="club_follows"
@@ -57,9 +90,6 @@ class ClubFollow(models.Model):
             models.UniqueConstraint(fields=["club", "user"], name="unique_club_follow")
         ]
         ordering = ["-created_at"]
-
-    def __str__(self) -> str:
-        return f"{self.user.username} follows {self.club.name}"
 
 
 class EventQuerySet(models.QuerySet):
@@ -89,6 +119,7 @@ class Event(models.Model):
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.DRAFT)
     waitlist_enabled = models.BooleanField(default=True)
     cancellation_reason = models.CharField(max_length=200, blank=True)
+    is_archived = models.BooleanField(default=False)
     created_by = models.ForeignKey(
         "accounts.User",
         on_delete=models.SET_NULL,
@@ -130,7 +161,9 @@ class Event(models.Model):
                 self.save(update_fields=["status", "updated_at"])
 
     def can_be_managed_by(self, user) -> bool:
-        return self.club.can_be_managed_by(user)
+        from core.permissions import can_manage_event
+
+        return can_manage_event(user, self)
 
     @property
     def registered_count(self) -> int:
@@ -312,5 +345,42 @@ class Registration(models.Model):
             models.UniqueConstraint(fields=["event", "user"], name="unique_event_user")
         ]
 
-    def __str__(self) -> str:
-        return f"{self.user.username} - {self.event.title} ({self.get_status_display()})"
+
+class Announcement(models.Model):
+    class TargetType(models.TextChoices):
+        CLUB = "club", "Club"
+        EVENT = "event", "Event"
+        ROOM = "room", "Room"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    author = models.ForeignKey(
+        "accounts.User", on_delete=models.CASCADE, related_name="announcements"
+    )
+    target_type = models.CharField(max_length=8, choices=TargetType.choices)
+    club = models.ForeignKey(
+        Club, on_delete=models.CASCADE, null=True, blank=True, related_name="announcements"
+    )
+    event = models.ForeignKey(
+        Event, on_delete=models.CASCADE, null=True, blank=True, related_name="announcements"
+    )
+    room = models.ForeignKey(
+        "rooms.DiscussionRoom",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="announcements",
+    )
+    title = models.CharField(max_length=120)
+    body = models.TextField(max_length=1200)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    archived_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def clean(self):
+        super().clean()
+        target_count = sum(bool(x) for x in [self.club, self.event, self.room])
+        if target_count != 1:
+            raise ValidationError("Announcement must target exactly one object.")

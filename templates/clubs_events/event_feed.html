@@ -4,7 +4,7 @@
 <div class="level">
     <div class="level-left"><h1 class="title">Upcoming Events</h1></div>
     <div class="level-right">
-        {% if request.user.role == 'club_rep' or request.user.role == 'institute_admin' or request.user.role == 'system_admin' %}
+        {% if request.user.role == 'institute_admin' or request.user.role == 'system_admin' %}
             <a class="button is-primary" href="{% url 'clubs_events:event_create' %}">Create Event</a>
         {% endif %}
     </div>
