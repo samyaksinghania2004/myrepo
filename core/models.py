@@ -14,6 +14,8 @@ class Notification(models.Model):
         EVENT_UPDATED = "event_updated", "Event updated"
         EVENT_CANCELLED = "event_cancelled", "Event cancelled"
         MODERATION_ACTION = "moderation_action", "Moderation action"
+        ANNOUNCEMENT = "announcement", "Announcement"
+        INVITE = "invite", "Invite"
         GENERIC = "generic", "Generic"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -51,18 +53,26 @@ class Notification(models.Model):
     class Meta:
         ordering = ["-created_at"]
 
-    def __str__(self) -> str:
-        return self.text
-
 
 class AuditLogEntry(models.Model):
     class ActionType(models.TextChoices):
         CLUB_CREATED = "club_created", "Club created"
         CLUB_UPDATED = "club_updated", "Club updated"
+        CLUB_JOINED = "club_joined", "Club joined"
+        CLUB_LEFT = "club_left", "Club left"
+        CLUB_MEMBER_REMOVED = "club_member_removed", "Club member removed"
+        ROLE_GRANTED = "role_granted", "Role granted"
+        ROLE_REVOKED = "role_revoked", "Role revoked"
         EVENT_CREATED = "event_created", "Event created"
         EVENT_UPDATED = "event_updated", "Event updated"
         EVENT_CANCELLED = "event_cancelled", "Event cancelled"
+        EVENT_ARCHIVED = "event_archived", "Event archived"
         ROOM_CREATED = "room_created", "Room created"
+        ROOM_UPDATED = "room_updated", "Room updated"
+        ROOM_ARCHIVED = "room_archived", "Room archived"
+        ROOM_INVITE_CREATED = "room_invite_created", "Room invite created"
+        ROOM_INVITE_UPDATED = "room_invite_updated", "Room invite updated"
+        ANNOUNCEMENT_CREATED = "announcement_created", "Announcement created"
         REPORT_DISMISSED = "report_dismissed", "Report dismissed"
         MESSAGE_DELETED = "message_deleted", "Message deleted"
         HANDLE_MUTED = "handle_muted", "Handle muted"
@@ -114,7 +124,3 @@ class AuditLogEntry(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
-
-    def __str__(self) -> str:
-        actor = self.acting_user.display_name if self.acting_user else "System"
-        return f"{self.get_action_type_display()} by {actor}"

@@ -399,14 +399,12 @@ def logout_view(request):
 
 @login_required
 def profile_view(request):
-    represented_clubs = request.user.represented_clubs.all()
-    followed_clubs = request.user.followed_clubs.all()
+    memberships = request.user.club_memberships.select_related("club").all()
     my_rooms = request.user.room_handles.select_related("room").all()
     my_events = request.user.registrations.select_related("event", "event__club").all()
 
     context = {
-        "represented_clubs": represented_clubs,
-        "followed_clubs": followed_clubs,
+        "memberships": memberships,
         "my_rooms": my_rooms,
         "my_events": my_events,
     }

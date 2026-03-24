@@ -7,6 +7,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
+from core.permissions import can_manage_room
+
 
 class DiscussionRoom(models.Model):
     class RoomType(models.TextChoices):
@@ -16,13 +18,15 @@ class DiscussionRoom(models.Model):
 
     class AccessType(models.TextChoices):
         PUBLIC = "public", "Public"
-        RESTRICTED = "restricted", "Restricted"
+        CLUB_ONLY = "club_only", "Club only"
+        EVENT_ONLY = "event_only", "Event only"
+        PRIVATE_INVITE_ONLY = "private_invite_only", "Private invite only"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=60)
     description = models.TextField(max_length=400, blank=True)
     room_type = models.CharField(max_length=10, choices=RoomType.choices)
-    access_type = models.CharField(max_length=15, choices=AccessType.choices)
+    access_type = models.CharField(max_length=25, choices=AccessType.choices)
     club = models.ForeignKey(
         "clubs_events.Club",
         on_delete=models.CASCADE,
@@ -44,9 +48,6 @@ class DiscussionRoom(models.Model):
         blank=True,
         related_name="created_rooms",
     )
-    moderators = models.ManyToManyField(
-        "accounts.User", related_name="moderated_rooms", blank=True
-    )
     is_archived = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
@@ -67,15 +68,37 @@ class DiscussionRoom(models.Model):
             raise ValidationError("Topic rooms should not be linked to a club or event.")
 
     def can_be_managed_by(self, user) -> bool:
-        if not user.is_authenticated:
-            return False
-        if user.role in {user.Role.MODERATOR, user.Role.INSTITUTE_ADMIN, user.Role.SYSTEM_ADMIN}:
-            return True
-        if self.created_by_id == user.id:
-            return True
-        if self.club and self.club.can_be_managed_by(user):
-            return True
-        return self.moderators.filter(pk=user.pk).exists()
+        return can_manage_room(user, self)
+
+
+class RoomInvite(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        ACCEPTED = "accepted", "Accepted"
+        REJECTED = "rejected", "Rejected"
+        REVOKED = "revoked", "Revoked"
+        EXPIRED = "expired", "Expired"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    room = models.ForeignKey(DiscussionRoom, on_delete=models.CASCADE, related_name="invites")
+    recipient = models.ForeignKey(
+        "accounts.User", on_delete=models.CASCADE, related_name="room_invites"
+    )
+    invited_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="sent_room_invites",
+    )
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["room", "recipient"], name="unique_room_invite")
+        ]
 
 
 class RoomHandle(models.Model):
@@ -108,9 +131,6 @@ class RoomHandle(models.Model):
             ),
         ]
 
-    def __str__(self) -> str:
-        return f"{self.handle_name} in {self.room.name}"
-
     @property
     def can_post(self) -> bool:
         return self.status == self.Status.APPROVED and not self.is_muted
@@ -139,9 +159,6 @@ class Message(models.Model):
     class Meta:
         ordering = ["created_at"]
 
-    def __str__(self) -> str:
-        return f"{self.handle.handle_name}: {self.text[:40]}"
-
     def editable_until(self):
         return self.created_at + self.EDIT_WINDOW
 
@@ -162,6 +179,7 @@ class Message(models.Model):
 class Report(models.Model):
     class Status(models.TextChoices):
         OPEN = "open", "Open"
+        IN_REVIEW = "in_review", "In review"
         DISMISSED = "dismissed", "Dismissed"
         ACTION_TAKEN = "action_taken", "Action taken"
 
@@ -186,6 +204,3 @@ class Report(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
-
-    def __str__(self) -> str:
-        return f"Report on {self.message_id}"

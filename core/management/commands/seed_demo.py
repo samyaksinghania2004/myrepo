@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from clubs_events.models import Club, ClubFollow, Event, Registration
+from clubs_events.models import Club, ClubMembership, Event, Registration
 from rooms.models import DiscussionRoom, Message, RoomHandle
 
 
@@ -22,32 +22,18 @@ class Command(BaseCommand):
                 "email": "student1@iitk.ac.in",
                 "role": User.Role.STUDENT,
                 "password": "Password@123",
-                "first_name": "Student",
-                "last_name": "One",
             },
-            "rep": {
-                "username": "clubrep1",
-                "email": "clubrep1@iitk.ac.in",
-                "role": User.Role.CLUB_REP,
+            "coordinator": {
+                "username": "coordinator1",
+                "email": "coordinator1@iitk.ac.in",
+                "role": User.Role.STUDENT,
                 "password": "Password@123",
-                "first_name": "Club",
-                "last_name": "Rep",
-            },
-            "moderator": {
-                "username": "moderator1",
-                "email": "moderator1@iitk.ac.in",
-                "role": User.Role.MODERATOR,
-                "password": "Password@123",
-                "first_name": "Room",
-                "last_name": "Moderator",
             },
             "admin": {
                 "username": "admin1",
                 "email": "admin1@iitk.ac.in",
                 "role": User.Role.INSTITUTE_ADMIN,
                 "password": "Password@123",
-                "first_name": "Institute",
-                "last_name": "Admin",
                 "is_staff": True,
                 "is_superuser": True,
             },
@@ -71,8 +57,16 @@ class Command(BaseCommand):
                 "contact_email": "progclub@iitk.ac.in",
             },
         )
-        club.representatives.add(created_users["rep"])
-        ClubFollow.objects.get_or_create(club=club, user=created_users["student"])
+        ClubMembership.objects.update_or_create(
+            club=club,
+            user=created_users["coordinator"],
+            defaults={"status": "active", "local_role": "coordinator"},
+        )
+        ClubMembership.objects.update_or_create(
+            club=club,
+            user=created_users["student"],
+            defaults={"status": "active", "local_role": "member"},
+        )
 
         now = timezone.now()
         event, _ = Event.objects.get_or_create(
@@ -87,8 +81,8 @@ class Command(BaseCommand):
                 "tags": "CP, workshop",
                 "status": Event.Status.PUBLISHED,
                 "waitlist_enabled": True,
-                "created_by": created_users["rep"],
-                "updated_by": created_users["rep"],
+                "created_by": created_users["coordinator"],
+                "updated_by": created_users["coordinator"],
             },
         )
         Registration.objects.get_or_create(
@@ -103,10 +97,9 @@ class Command(BaseCommand):
                 "description": "Discuss problems, contests and resources.",
                 "room_type": DiscussionRoom.RoomType.TOPIC,
                 "access_type": DiscussionRoom.AccessType.PUBLIC,
-                "created_by": created_users["moderator"],
+                "created_by": created_users["coordinator"],
             },
         )
-        room.moderators.add(created_users["moderator"])
 
         handle, _ = RoomHandle.objects.get_or_create(
             room=room,
@@ -124,6 +117,3 @@ class Command(BaseCommand):
         )
 
         self.stdout.write(self.style.SUCCESS("Demo data loaded successfully."))
-        self.stdout.write(
-            "Demo users: student1, clubrep1, moderator1, admin1 (all use Password@123)."
-        )

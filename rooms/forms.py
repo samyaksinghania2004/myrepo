@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from django import forms
 
-from accounts.models import User
 from clubs_events.models import Club, Event
+from accounts.models import User
 
-from .models import DiscussionRoom, Report
+from .models import DiscussionRoom, Report, RoomInvite
 
 
 class DiscussionRoomForm(forms.ModelForm):
@@ -18,38 +18,17 @@ class DiscussionRoomForm(forms.ModelForm):
             "access_type",
             "club",
             "event",
-            "moderators",
             "is_archived",
         ]
-        widgets = {
-            "name": forms.TextInput(attrs={"class": "input"}),
-            "description": forms.Textarea(attrs={"class": "textarea", "rows": 4}),
-            "room_type": forms.Select(attrs={"class": "select"}),
-            "access_type": forms.Select(attrs={"class": "select"}),
-            "club": forms.Select(attrs={"class": "select"}),
-            "event": forms.Select(attrs={"class": "select"}),
-            "moderators": forms.SelectMultiple(attrs={"class": "select is-multiple"}),
-        }
 
-    def __init__(self, *args, user=None, **kwargs):
+    def __init__(self, *args, club_queryset=None, event_queryset=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["moderators"].queryset = User.objects.filter(
-            role__in=[User.Role.MODERATOR, User.Role.INSTITUTE_ADMIN, User.Role.SYSTEM_ADMIN]
-        ).order_by("username")
-        if user and user.role == User.Role.CLUB_REP:
-            clubs = user.represented_clubs.all()
-            self.fields["club"].queryset = clubs
-            self.fields["event"].queryset = Event.objects.filter(club__in=clubs)
-        else:
-            self.fields["club"].queryset = Club.objects.filter(is_active=True)
-            self.fields["event"].queryset = Event.objects.all()
+        self.fields["club"].queryset = club_queryset or Club.objects.filter(is_active=True)
+        self.fields["event"].queryset = event_queryset or Event.objects.filter(is_archived=False)
 
 
 class JoinRoomForm(forms.Form):
-    handle_name = forms.CharField(
-        max_length=24,
-        widget=forms.TextInput(attrs={"class": "input", "placeholder": "Choose a handle"}),
-    )
+    handle_name = forms.CharField(max_length=24)
 
     def __init__(self, *args, room=None, **kwargs):
         self.room = room
@@ -62,35 +41,34 @@ class JoinRoomForm(forms.Form):
         return handle_name
 
 
+class RoomInviteForm(forms.Form):
+    recipient = forms.ModelChoiceField(queryset=User.objects.none())
+
+    def __init__(self, *args, room=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.room = room
+        qs = User.objects.all()
+        if room and room.club:
+            member_ids = room.club.memberships.filter(status="active").values_list("user_id", flat=True)
+            qs = qs.filter(id__in=member_ids)
+        if room and room.event:
+            attendee_ids = room.event.registrations.filter(status="registered").values_list("user_id", flat=True)
+            qs = qs.filter(id__in=attendee_ids)
+        self.fields["recipient"].queryset = qs
+
+
 class MessageForm(forms.Form):
-    text = forms.CharField(
-        max_length=1000,
-        widget=forms.Textarea(
-            attrs={"class": "textarea", "rows": 3, "placeholder": "Type your message here..."}
-        ),
-    )
+    text = forms.CharField(max_length=1000, widget=forms.Textarea(attrs={"rows": 3}))
 
 
 class MessageEditForm(forms.Form):
-    text = forms.CharField(
-        max_length=1000,
-        widget=forms.Textarea(attrs={"class": "textarea", "rows": 3}),
-    )
+    text = forms.CharField(max_length=1000, widget=forms.Textarea(attrs={"rows": 3}))
 
 
 class ReportForm(forms.ModelForm):
     class Meta:
         model = Report
         fields = ["reason"]
-        widgets = {
-            "reason": forms.Textarea(
-                attrs={
-                    "class": "textarea",
-                    "rows": 3,
-                    "placeholder": "Optional reason for the report",
-                }
-            )
-        }
 
 
 class ModerateReportForm(forms.Form):
@@ -110,8 +88,5 @@ class ModerateReportForm(forms.Form):
         (ACTION_DELETE_AND_MUTE, "Delete message and mute handle"),
     ]
 
-    action = forms.ChoiceField(choices=ACTION_CHOICES, widget=forms.Select(attrs={"class": "select"}))
-    reason = forms.CharField(
-        max_length=255,
-        widget=forms.Textarea(attrs={"class": "textarea", "rows": 3}),
-    )
+    action = forms.ChoiceField(choices=ACTION_CHOICES)
+    reason = forms.CharField(max_length=255, widget=forms.Textarea(attrs={"rows": 3}))

@@ -4,33 +4,24 @@ from django import forms
 
 from accounts.models import User
 
-from .models import Club, Event
+from .models import Announcement, Club, ClubMembership, Event
 
 
 class ClubForm(forms.ModelForm):
     class Meta:
         model = Club
-        fields = [
-            "name",
-            "category",
-            "description",
-            "contact_email",
-            "is_active",
-            "representatives",
-        ]
-        widgets = {
-            "name": forms.TextInput(attrs={"class": "input"}),
-            "category": forms.TextInput(attrs={"class": "input"}),
-            "description": forms.Textarea(attrs={"class": "textarea", "rows": 4}),
-            "contact_email": forms.EmailInput(attrs={"class": "input"}),
-            "representatives": forms.SelectMultiple(attrs={"class": "select is-multiple"}),
-        }
+        fields = ["name", "category", "description", "contact_email", "is_active"]
 
-    def __init__(self, *args, **kwargs):
+
+class ClubSecretaryForm(forms.Form):
+    user = forms.ModelChoiceField(queryset=None)
+
+    def __init__(self, *args, club=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["representatives"].queryset = User.objects.filter(
-            role__in=[User.Role.CLUB_REP, User.Role.INSTITUTE_ADMIN, User.Role.SYSTEM_ADMIN]
-        ).order_by("username")
+        active_ids = club.memberships.filter(
+            status=ClubMembership.Status.ACTIVE,
+        ).values_list("user_id", flat=True)
+        self.fields["user"].queryset = User.objects.filter(id__in=active_ids)
 
 
 class EventForm(forms.ModelForm):
@@ -47,12 +38,9 @@ class EventForm(forms.ModelForm):
             "tags",
             "status",
             "waitlist_enabled",
+            "is_archived",
         ]
         widgets = {
-            "club": forms.Select(attrs={"class": "select"}),
-            "title": forms.TextInput(attrs={"class": "input"}),
-            "description": forms.Textarea(attrs={"class": "textarea", "rows": 4}),
-            "venue": forms.TextInput(attrs={"class": "input"}),
             "start_time": forms.DateTimeInput(
                 attrs={"class": "input", "type": "datetime-local"},
                 format="%Y-%m-%dT%H:%M",
@@ -61,11 +49,6 @@ class EventForm(forms.ModelForm):
                 attrs={"class": "input", "type": "datetime-local"},
                 format="%Y-%m-%dT%H:%M",
             ),
-            "capacity": forms.NumberInput(attrs={"class": "input", "min": 1}),
-            "tags": forms.TextInput(
-                attrs={"class": "input", "placeholder": "e.g. technical, workshop"}
-            ),
-            "status": forms.Select(attrs={"class": "select"}),
         }
 
     def __init__(self, *args, club_queryset=None, **kwargs):
@@ -77,7 +60,10 @@ class EventForm(forms.ModelForm):
 
 
 class EventCancellationForm(forms.Form):
-    reason = forms.CharField(
-        max_length=200,
-        widget=forms.Textarea(attrs={"class": "textarea", "rows": 3}),
-    )
+    reason = forms.CharField(max_length=200, widget=forms.Textarea(attrs={"rows": 3}))
+
+
+class AnnouncementForm(forms.ModelForm):
+    class Meta:
+        model = Announcement
+        fields = ["title", "body"]

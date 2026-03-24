@@ -21,10 +21,10 @@
                 <a class="navbar-item" href="{% url 'rooms:room_list' %}">Discussion Rooms</a>
                 <a class="navbar-item" href="{% url 'core:search' %}">Search</a>
                 <a class="navbar-item" href="{% url 'core:help' %}">Help</a>
-                {% if request.user.role == 'club_rep' or request.user.role == 'institute_admin' or request.user.role == 'system_admin' %}
+                {% if request.user.role == 'institute_admin' or request.user.role == 'system_admin' %}
                     <a class="navbar-item" href="{% url 'clubs_events:analytics_dashboard' %}">Analytics</a>
                 {% endif %}
-                {% if request.user.role == 'moderator' or request.user.role == 'institute_admin' or request.user.role == 'system_admin' %}
+                {% if request.user.role == 'institute_admin' or request.user.role == 'system_admin' %}
                     <a class="navbar-item" href="{% url 'rooms:moderation_dashboard' %}">Moderation</a>
                 {% endif %}
             {% endif %}

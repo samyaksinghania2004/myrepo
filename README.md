@@ -38,8 +38,7 @@ Open the app at `http://127.0.0.1:8000/`.
 All demo users use the password `Password@123`.
 
 - `student1`
-- `clubrep1`
-- `moderator1`
+- `coordinator1`
 - `admin1`
 
 ## Deployment notes for your IITK server
@@ -55,3 +54,6 @@ All demo users use the password `Password@123`.
 - Add richer attendance and club analytics.
 - Add real-time chat using Django Channels or polling APIs.
 - Expose a REST API for the mobile app.
+
+## Permissions overhaul (2026)
+See `PERMISSIONS.md` for the complete matrix and migration notes.

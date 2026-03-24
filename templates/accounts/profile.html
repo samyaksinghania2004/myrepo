@@ -13,27 +13,15 @@
     </div>
     <div class="column">
         <div class="box">
-            <h2 class="title is-5">Represented clubs</h2>
-            {% if represented_clubs %}
+            <h2 class="title is-5">Club memberships</h2>
+            {% if memberships %}
                 <ul>
-                    {% for club in represented_clubs %}
-                        <li><a href="{% url 'clubs_events:club_detail' club.pk %}">{{ club.name }}</a></li>
+                    {% for m in memberships %}
+                        <li><a href="{% url 'clubs_events:club_detail' m.club.pk %}">{{ m.club.name }}</a> — {{ m.get_local_role_display }} ({{ m.get_status_display }})</li>
                     {% endfor %}
                 </ul>
             {% else %}
-                <p>No represented clubs.</p>
-            {% endif %}
-        </div>
-        <div class="box">
-            <h2 class="title is-5">Followed clubs</h2>
-            {% if followed_clubs %}
-                <ul>
-                    {% for club in followed_clubs %}
-                        <li><a href="{% url 'clubs_events:club_detail' club.pk %}">{{ club.name }}</a></li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p>You are not following any clubs yet.</p>
+                <p>No club memberships.</p>
             {% endif %}
         </div>
         <div class="box">

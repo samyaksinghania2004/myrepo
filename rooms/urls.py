@@ -12,29 +12,11 @@ urlpatterns = [
     path("<uuid:pk>/", views.room_detail_view, name="room_detail"),
     path("<uuid:pk>/edit/", views.room_edit_view, name="room_edit"),
     path("<uuid:pk>/join/", views.join_room_view, name="join_room"),
-    path(
-        "<uuid:room_pk>/handles/<uuid:handle_pk>/approve/",
-        views.approve_handle_view,
-        name="approve_handle",
-    ),
-    path(
-        "<uuid:room_pk>/handles/<uuid:handle_pk>/reject/",
-        views.reject_handle_view,
-        name="reject_handle",
-    ),
-    path(
-        "<uuid:room_pk>/messages/<uuid:message_pk>/edit/",
-        views.message_edit_view,
-        name="message_edit",
-    ),
-    path(
-        "<uuid:room_pk>/messages/<uuid:message_pk>/delete/",
-        views.message_delete_view,
-        name="message_delete",
-    ),
-    path(
-        "<uuid:room_pk>/messages/<uuid:message_pk>/report/",
-        views.report_message_view,
-        name="report_message",
-    ),
+    path("<uuid:pk>/invite/", views.invite_user_view, name="invite_user"),
+    path("invites/<uuid:invite_pk>/<str:decision>/", views.respond_invite_view, name="respond_invite"),
+    path("<uuid:room_pk>/handles/<uuid:handle_pk>/approve/", views.approve_handle_view, name="approve_handle"),
+    path("<uuid:room_pk>/handles/<uuid:handle_pk>/reject/", views.reject_handle_view, name="reject_handle"),
+    path("<uuid:room_pk>/messages/<uuid:message_pk>/edit/", views.message_edit_view, name="message_edit"),
+    path("<uuid:room_pk>/messages/<uuid:message_pk>/delete/", views.message_delete_view, name="message_delete"),
+    path("<uuid:room_pk>/messages/<uuid:message_pk>/report/", views.report_message_view, name="report_message"),
 ]

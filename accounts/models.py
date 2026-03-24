@@ -10,8 +10,6 @@ from django.utils import timezone
 class User(AbstractUser):
     class Role(models.TextChoices):
         STUDENT = "student", "Student"
-        CLUB_REP = "club_rep", "Club Representative"
-        MODERATOR = "moderator", "Moderator"
         INSTITUTE_ADMIN = "institute_admin", "Institute Admin"
         SYSTEM_ADMIN = "system_admin", "System Admin"
 

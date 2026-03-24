@@ -57,6 +57,12 @@
                 <p>No room linked yet.</p>
             {% endif %}
         </div>
+        
+        <div class="box">
+            <h2 class="title is-5">Announcements</h2>
+            {% if can_post_announcement %}<a class="button is-small" href="{% url 'clubs_events:announcement_create' 'event' event.pk %}">Post</a>{% endif %}
+            {% for ann in announcements %}<p><strong>{{ ann.title }}</strong> - {{ ann.body }}</p>{% empty %}<p>No announcements.</p>{% endfor %}
+        </div>
         {% if registrations %}
             <div class="box">
                 <h2 class="title is-5">Registrations</h2>
