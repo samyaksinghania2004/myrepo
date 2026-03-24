@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Verify OTP · ClubsHub{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container" style="max-width: 720px;">
+    <h1 class="title">Verify your one-time code</h1>
+    <p class="subtitle is-6">
+      Enter the 6-digit code sent to your IITK email address.
+    </p>
+
+    <div class="box">
+      <form method="post" action="{% url 'accounts:otp_verify' %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+
+        {% if form.non_field_errors %}
+          <div class="notification is-danger is-light">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
+
+        {% for field in form %}
+          <div class="field">
+            <label class="label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            <div class="control">
+              {{ field }}
+            </div>
+            {% for error in field.errors %}
+              <p class="help is-danger">{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endfor %}
+
+        <div class="field">
+          <div class="control">
+            <button class="button is-link is-fullwidth" type="submit">
+              Verify and log in
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="box">
+      <h2 class="title is-6">Need a fresh code?</h2>
+      <form method="post" action="{% url 'accounts:request_login_otp' %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+        {% for field in otp_request_form %}
+          <div class="field">
+            <label class="label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            <div class="control">
+              {{ field }}
+            </div>
+            {% for error in field.errors %}
+              <p class="help is-danger">{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endfor %}
+        <div class="field">
+          <div class="control">
+            <button class="button is-info is-light" type="submit">
+              Resend code
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <p>
+      <a href="{% url 'accounts:login' %}">Back to login</a>
+    </p>
+  </div>
+</section>
+{% endblock %}

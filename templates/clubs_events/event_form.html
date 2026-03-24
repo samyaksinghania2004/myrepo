@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}{{ mode }} Event · ClubsHub{% endblock %}
+{% block content %}
+<div class="columns is-centered">
+    <div class="column is-two-thirds">
+        <div class="box">
+            <h1 class="title">{{ mode }} event</h1>
+            <form method="post">
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+                {% for field in form %}
+                    <div class="field">
+                        <label class="label">{{ field.label }}</label>
+                        <div class="control">{{ field }}</div>
+                        {% if field.help_text %}<p class="help">{{ field.help_text }}</p>{% endif %}
+                        {% for error in field.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                    </div>
+                {% endfor %}
+                <button class="button is-primary" type="submit">Save event</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

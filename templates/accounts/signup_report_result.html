@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Signup reported · ClubsHub{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container" style="max-width: 720px;">
+    <h1 class="title">Signup report</h1>
+    <div class="box">
+      {% if success %}
+        <div class="notification is-success is-light">
+          {{ message }}
+        </div>
+      {% else %}
+        <div class="notification is-danger is-light">
+          {{ message }}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

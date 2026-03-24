@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Check your email · ClubsHub{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container" style="max-width: 720px;">
+    <h1 class="title">Check your email</h1>
+    <div class="box">
+      <p>
+        We have sent a verification email{% if email %} to <strong>{{ email }}</strong>{% endif %}.
+      </p>
+      <p class="mt-3">
+        Please open the verification link to activate your account. If this signup was not yours, use the “not me” link in the same email.
+      </p>
+    </div>
+
+    <p>
+      Need another email? <a href="{% url 'accounts:resend_verification' %}{% if email %}?email={{ email|urlencode }}{% endif %}">Resend verification</a>.
+    </p>
+    <p class="mt-2">
+      <a href="{% url 'accounts:login' %}">Back to login</a>
+    </p>
+  </div>
+</section>
+{% endblock %}

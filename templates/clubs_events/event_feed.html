@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block title %}Events · ClubsHub{% endblock %}
+{% block content %}
+<div class="level">
+    <div class="level-left"><h1 class="title">Upcoming Events</h1></div>
+    <div class="level-right">
+        {% if request.user.role == 'club_rep' or request.user.role == 'institute_admin' or request.user.role == 'system_admin' %}
+            <a class="button is-primary" href="{% url 'clubs_events:event_create' %}">Create Event</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="box">
+    <form method="get">
+        <div class="columns is-multiline">
+            <div class="column is-3">
+                <label class="label">Keyword</label>
+                <input class="input" type="text" name="q" value="{{ q }}" maxlength="50" placeholder="Search events">
+            </div>
+            <div class="column is-2">
+                <label class="label">Club</label>
+                <div class="select is-fullwidth">
+                    <select name="club">
+                        <option value="">All clubs</option>
+                        {% for club in clubs %}
+                            <option value="{{ club.pk }}" {% if selected_club == club.id|stringformat:'s' %}selected{% endif %}>{{ club.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="column is-2">
+                <label class="label">Tag</label>
+                <input class="input" type="text" name="tag" value="{{ tag }}" placeholder="workshop">
+            </div>
+            <div class="column is-2">
+                <label class="label">From</label>
+                <input class="input" type="date" name="date_from" value="{{ date_from }}">
+            </div>
+            <div class="column is-2">
+                <label class="label">To</label>
+                <input class="input" type="date" name="date_to" value="{{ date_to }}">
+            </div>
+            <div class="column is-1 is-flex is-align-items-flex-end">
+                <button class="button is-link is-fullwidth" type="submit">Filter</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="columns">
+    <div class="column is-two-thirds">
+        {% if events %}
+            {% for event in events %}
+                <div class="box">
+                    <div class="level">
+                        <div class="level-left">
+                            <div>
+                                <h2 class="title is-5 mb-1"><a href="{% url 'clubs_events:event_detail' event.pk %}">{{ event.title }}</a></h2>
+                                <p class="subtitle is-6 mb-0">{{ event.club.name }} · {{ event.venue }}</p>
+                                <p class="is-size-7 has-text-grey">{{ event.start_time }} → {{ event.end_time }}</p>
+                                {% if event.tags %}<p class="is-size-7">Tags: {{ event.tags }}</p>{% endif %}
+                            </div>
+                        </div>
+                        <div class="level-right">
+                            <div class="has-text-right">
+                                <p><strong>Capacity:</strong> {% if event.capacity %}{{ event.registered_count }}/{{ event.capacity }}{% else %}Open{% endif %}</p>
+                                <a class="button is-small is-link is-light mt-2" href="{% url 'clubs_events:event_detail' event.pk %}">View details</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="notification is-light">No events match the current filters.</div>
+        {% endif %}
+    </div>
+    <div class="column">
+        <div class="box">
+            <h2 class="title is-5">My upcoming registrations</h2>
+            {% if my_registrations %}
+                <ul>
+                    {% for registration in my_registrations %}
+                        <li>
+                            <a href="{% url 'clubs_events:event_detail' registration.event.pk %}">{{ registration.event.title }}</a>
+                            <span class="tag is-light">{{ registration.get_status_display }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No registered or waitlisted events yet.</p>
+            {% endif %}
+        </div>
+        <div class="box">
+            <h2 class="title is-5">From clubs you follow</h2>
+            {% if followed_events %}
+                <ul>
+                    {% for event in followed_events %}
+                        <li><a href="{% url 'clubs_events:event_detail' event.pk %}">{{ event.title }}</a></li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>Follow clubs to personalise this section.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

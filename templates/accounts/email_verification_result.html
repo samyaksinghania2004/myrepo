@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Email verification · ClubsHub{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container" style="max-width: 720px;">
+    <h1 class="title">Email verification</h1>
+    <div class="box">
+      {% if success %}
+        <div class="notification is-success is-light">
+          {{ message }}
+        </div>
+      {% else %}
+        <div class="notification is-danger is-light">
+          {{ message }}
+        </div>
+      {% endif %}
+
+      <p class="mt-4">
+        <a class="button is-link" href="{% url 'accounts:login' %}">
+          Go to login
+        </a>
+      </p>
+    </div>
+  </div>
+</section>
+{% endblock %}

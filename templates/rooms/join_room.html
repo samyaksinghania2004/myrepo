@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Join {{ room.name }} · ClubsHub{% endblock %}
+{% block content %}
+<div class="columns is-centered">
+    <div class="column is-half">
+        <div class="box">
+            <h1 class="title">Join {{ room.name }}</h1>
+            <p class="subtitle">Choose a handle that is unique within this room.</p>
+            <p><strong>Access:</strong> {{ room.get_access_type_display }}</p>
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="field">
+                        <label class="label">{{ field.label }}</label>
+                        <div class="control">{{ field }}</div>
+                        {% for error in field.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                    </div>
+                {% endfor %}
+                <button class="button is-primary" type="submit">Continue</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

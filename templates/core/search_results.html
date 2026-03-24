@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}Search · ClubsHub{% endblock %}
+{% block content %}
+<h1 class="title">Search</h1>
+<form method="get" class="box">
+    <div class="field has-addons">
+        <div class="control is-expanded">{{ form.q }}</div>
+        <div class="control"><button class="button is-primary" type="submit">Search</button></div>
+    </div>
+</form>
+{% if query %}
+    <div class="columns">
+        <div class="column">
+            <div class="box">
+                <h2 class="title is-5">Clubs</h2>
+                {% if clubs %}
+                    <ul>
+                        {% for club in clubs %}
+                            <li><a href="{% url 'clubs_events:club_detail' club.pk %}">{{ club.name }}</a> — {{ club.category }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No clubs matched.</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="column">
+            <div class="box">
+                <h2 class="title is-5">Events</h2>
+                {% if events %}
+                    <ul>
+                        {% for event in events %}
+                            <li><a href="{% url 'clubs_events:event_detail' event.pk %}">{{ event.title }}</a> — {{ event.club.name }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No events matched.</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="column">
+            <div class="box">
+                <h2 class="title is-5">Rooms</h2>
+                {% if rooms %}
+                    <ul>
+                        {% for room in rooms %}
+                            <li><a href="{% url 'rooms:room_detail' room.pk %}">{{ room.name }}</a> — {{ room.get_room_type_display }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No rooms matched.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

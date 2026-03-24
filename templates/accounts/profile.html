@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}Profile · ClubsHub{% endblock %}
+{% block content %}
+<div class="columns">
+    <div class="column is-one-third">
+        <div class="box">
+            <h1 class="title is-4">{{ request.user.display_name }}</h1>
+            <p><strong>Username:</strong> {{ request.user.username }}</p>
+            <p><strong>Email:</strong> {{ request.user.email }}</p>
+            <p><strong>Role:</strong> {{ request.user.get_role_display }}</p>
+            <p><strong>Global ban:</strong> {{ request.user.is_globally_banned|yesno:"Yes,No" }}</p>
+        </div>
+    </div>
+    <div class="column">
+        <div class="box">
+            <h2 class="title is-5">Represented clubs</h2>
+            {% if represented_clubs %}
+                <ul>
+                    {% for club in represented_clubs %}
+                        <li><a href="{% url 'clubs_events:club_detail' club.pk %}">{{ club.name }}</a></li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No represented clubs.</p>
+            {% endif %}
+        </div>
+        <div class="box">
+            <h2 class="title is-5">Followed clubs</h2>
+            {% if followed_clubs %}
+                <ul>
+                    {% for club in followed_clubs %}
+                        <li><a href="{% url 'clubs_events:club_detail' club.pk %}">{{ club.name }}</a></li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>You are not following any clubs yet.</p>
+            {% endif %}
+        </div>
+        <div class="box">
+            <h2 class="title is-5">My event registrations</h2>
+            {% if my_events %}
+                <table class="table is-fullwidth">
+                    <thead><tr><th>Event</th><th>Status</th><th>Attendance</th></tr></thead>
+                    <tbody>
+                    {% for registration in my_events %}
+                        <tr>
+                            <td><a href="{% url 'clubs_events:event_detail' registration.event.pk %}">{{ registration.event.title }}</a></td>
+                            <td>{{ registration.get_status_display }}</td>
+                            <td>{{ registration.get_attendance_display }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No event activity yet.</p>
+            {% endif %}
+        </div>
+        <div class="box">
+            <h2 class="title is-5">My discussion room handles</h2>
+            {% if my_rooms %}
+                <table class="table is-fullwidth">
+                    <thead><tr><th>Room</th><th>Handle</th><th>Status</th></tr></thead>
+                    <tbody>
+                    {% for room_handle in my_rooms %}
+                        <tr>
+                            <td><a href="{% url 'rooms:room_detail' room_handle.room.pk %}">{{ room_handle.room.name }}</a></td>
+                            <td>{{ room_handle.handle_name }}</td>
+                            <td>{{ room_handle.get_status_display }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No room memberships yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

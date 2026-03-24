@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Analytics · ClubsHub{% endblock %}
+{% block content %}
+<h1 class="title">Analytics dashboard</h1>
+{% if events %}
+    <div class="columns is-multiline">
+        {% for event in events %}
+            <div class="column is-half">
+                <div class="box">
+                    <h2 class="title is-5"><a href="{% url 'clubs_events:event_detail' event.pk %}">{{ event.title }}</a></h2>
+                    <p class="subtitle is-6">{{ event.club.name }}</p>
+                    <ul>
+                        <li><strong>Status:</strong> {{ event.get_status_display }}</li>
+                        <li><strong>Registered:</strong> {{ event.registered_count }}</li>
+                        <li><strong>Waitlisted:</strong> {{ event.waitlist_count }}</li>
+                        <li><strong>Attendance:</strong> {{ event.attendance_count }} ({{ event.attendance_percentage }}%)</li>
+                    </ul>
+                    <a class="button is-small is-link is-light mt-3" href="{% url 'clubs_events:attendance_manage' event.pk %}">Manage attendance</a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="notification is-light">No events available for analytics yet.</div>
+{% endif %}
+{% endblock %}

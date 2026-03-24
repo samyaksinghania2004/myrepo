@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Discussion Rooms · ClubsHub{% endblock %}
+{% block content %}
+<div class="level">
+    <div class="level-left"><h1 class="title">Discussion Rooms</h1></div>
+    <div class="level-right">
+        {% if request.user.role == 'club_rep' or request.user.role == 'moderator' or request.user.role == 'institute_admin' or request.user.role == 'system_admin' %}
+            <a class="button is-primary" href="{% url 'rooms:room_create' %}">Create Room</a>
+        {% endif %}
+    </div>
+</div>
+<div class="box">
+    <form method="get" class="field has-addons">
+        <div class="control is-expanded">
+            <input class="input" type="text" name="q" value="{{ q }}" placeholder="Search rooms">
+        </div>
+        <div class="control"><button class="button is-link" type="submit">Search</button></div>
+    </form>
+</div>
+<div class="columns">
+    <div class="column is-two-thirds">
+        <table class="table is-fullwidth is-hoverable">
+            <thead><tr><th>Room</th><th>Type</th><th>Access</th><th></th></tr></thead>
+            <tbody>
+            {% for room in rooms %}
+                <tr>
+                    <td>
+                        <strong>{{ room.name }}</strong><br>
+                        <span class="is-size-7 has-text-grey">{{ room.description|default:'No description' }}</span>
+                    </td>
+                    <td>{{ room.get_room_type_display }}</td>
+                    <td>{{ room.get_access_type_display }}</td>
+                    <td>
+                        <a class="button is-small is-link is-light" href="{% url 'rooms:join_room' room.pk %}">Open / Join</a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="4">No rooms found.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="column">
+        <div class="box">
+            <h2 class="title is-5">My room handles</h2>
+            {% if my_handles %}
+                <ul>
+                    {% for handle in my_handles %}
+                        <li><a href="{% url 'rooms:room_detail' handle.room.pk %}">{{ handle.room.name }}</a> — {{ handle.handle_name }} ({{ handle.get_status_display }})</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No room memberships yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

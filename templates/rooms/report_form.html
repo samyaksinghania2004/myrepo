@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Report Message · ClubsHub{% endblock %}
+{% block content %}
+<div class="columns is-centered">
+    <div class="column is-half">
+        <div class="box">
+            <h1 class="title">Report message</h1>
+            <p class="mb-4">Message by <strong>{{ message_obj.handle.handle_name }}</strong>: {{ message_obj.text }}</p>
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="field">
+                        <label class="label">{{ field.label }}</label>
+                        <div class="control">{{ field }}</div>
+                    </div>
+                {% endfor %}
+                <button class="button is-danger" type="submit">Submit report</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

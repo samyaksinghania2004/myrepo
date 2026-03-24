@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Login · ClubsHub{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container" style="max-width: 960px;">
+    <h1 class="title">Sign in</h1>
+    <p class="subtitle is-6">
+      Use your IITK credentials or request a one-time code by email.
+    </p>
+
+    <div class="columns is-variable is-5">
+      <div class="column">
+        <div class="box">
+          <h2 class="title is-5">Login with password</h2>
+
+          <form method="post" action="{% url 'accounts:login' %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+
+            {% if form.non_field_errors %}
+              <div class="notification is-danger is-light">
+                {{ form.non_field_errors }}
+              </div>
+            {% endif %}
+
+            {% for field in form %}
+              <div class="field">
+                <label class="label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                <div class="control">
+                  {{ field }}
+                </div>
+                {% for error in field.errors %}
+                  <p class="help is-danger">{{ error }}</p>
+                {% endfor %}
+              </div>
+            {% endfor %}
+
+            <div class="field">
+              <div class="control">
+                <button class="button is-link is-fullwidth" type="submit">
+                  Log in
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <p class="mt-4">
+            <a href="{% url 'accounts:password_reset' %}">Forgot password?</a>
+          </p>
+          <p class="mt-2">
+            <a href="{% url 'accounts:resend_verification' %}">Need a new verification email?</a>
+          </p>
+        </div>
+      </div>
+
+      <div class="column">
+        <div class="box">
+          <h2 class="title is-5">Login with OTP</h2>
+          <p class="mb-4">
+            Enter your IITK email and we will send a 6-digit one-time code.
+          </p>
+
+          <form method="post" action="{% url 'accounts:request_login_otp' %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+
+            {% if otp_request_form.non_field_errors %}
+              <div class="notification is-danger is-light">
+                {{ otp_request_form.non_field_errors }}
+              </div>
+            {% endif %}
+
+            {% for field in otp_request_form %}
+              <div class="field">
+                <label class="label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                <div class="control">
+                  {{ field }}
+                </div>
+                {% for error in field.errors %}
+                  <p class="help is-danger">{{ error }}</p>
+                {% endfor %}
+              </div>
+            {% endfor %}
+
+            <div class="field">
+              <div class="control">
+                <button class="button is-info is-fullwidth" type="submit">
+                  Send one-time code
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <p class="help">
+            If an eligible account exists, the code will be sent to the registered email.
+          </p>
+
+          <p class="mt-4">
+            <a href="{% url 'accounts:otp_verify' %}">Already have a code? Verify it here.</a>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <p class="has-text-centered mt-5">
+      New here? <a href="{% url 'accounts:signup' %}">Create an account</a>.
+    </p>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Cancel Event · ClubsHub{% endblock %}
+{% block content %}
+<div class="columns is-centered">
+    <div class="column is-half">
+        <div class="box">
+            <h1 class="title">Cancel {{ event.title }}</h1>
+            <p class="mb-4">This will block further registrations and notify affected users.</p>
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="field">
+                        <label class="label">{{ field.label }}</label>
+                        <div class="control">{{ field }}</div>
+                        {% for error in field.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                    </div>
+                {% endfor %}
+                <button class="button is-danger" type="submit">Confirm cancellation</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

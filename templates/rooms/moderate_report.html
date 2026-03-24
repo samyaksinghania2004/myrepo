@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Moderate Report · ClubsHub{% endblock %}
+{% block content %}
+<div class="columns">
+    <div class="column is-three-fifths">
+        <div class="box">
+            <h1 class="title">Moderate report</h1>
+            <p><strong>Room:</strong> {{ report.message.room.name }}</p>
+            <p><strong>Reporter:</strong> {{ report.reporter.display_name }}</p>
+            <p><strong>Reported handle:</strong> {{ report.message.handle.handle_name }}</p>
+            <p><strong>Reason:</strong> {{ report.reason|default:'No reason supplied.' }}</p>
+            <article class="message is-light mt-4">
+                <div class="message-header"><p>Reported message</p></div>
+                <div class="message-body">{{ report.message.text }}</div>
+            </article>
+            <h2 class="title is-5 mt-5">Message context</h2>
+            {% for item in surrounding_messages %}
+                <div class="box p-3">
+                    <p><strong>{{ item.handle.handle_name }}</strong> <span class="is-size-7 has-text-grey">{{ item.created_at }}</span></p>
+                    <p class="mt-2">{% if item.is_deleted %}<span class="muted-message">Deleted message.</span>{% else %}{{ item.text }}{% endif %}</p>
+                </div>
+            {% endfor %}
+            {% if revealed_user %}
+                <div class="notification is-warning">
+                    Identity already revealed: <strong>{{ revealed_user.display_name }}</strong> ({{ revealed_user.email }})
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="column">
+        <div class="box">
+            <h2 class="title is-5">Take action</h2>
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="field">
+                        <label class="label">{{ field.label }}</label>
+                        <div class="control">{{ field }}</div>
+                        {% for error in field.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                    </div>
+                {% endfor %}
+                <button class="button is-danger" type="submit">Apply action</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Clubs · ClubsHub{% endblock %}
+{% block content %}
+<div class="level">
+    <div class="level-left"><h1 class="title">Clubs</h1></div>
+    <div class="level-right">
+        {% if request.user.role == 'institute_admin' or request.user.role == 'system_admin' %}
+            <a class="button is-primary" href="{% url 'clubs_events:club_create' %}">Create Club</a>
+        {% endif %}
+    </div>
+</div>
+<div class="box">
+    <form method="get" class="field has-addons">
+        <div class="control is-expanded">
+            <input class="input" type="text" name="q" value="{{ q }}" placeholder="Search clubs">
+        </div>
+        <div class="control"><button class="button is-link" type="submit">Search</button></div>
+    </form>
+</div>
+<table class="table is-fullwidth is-hoverable">
+    <thead><tr><th>Name</th><th>Category</th><th>Followers</th><th></th></tr></thead>
+    <tbody>
+    {% for club in clubs %}
+        <tr>
+            <td><a href="{% url 'clubs_events:club_detail' club.pk %}">{{ club.name }}</a></td>
+            <td>{{ club.category }}</td>
+            <td>{{ club.follower_count }}</td>
+            <td>
+                <form method="post" action="{% url 'clubs_events:club_follow_toggle' club.pk %}">
+                    {% csrf_token %}
+                    <button class="button is-small {% if club.id in user_followed_ids %}is-light{% else %}is-primary is-light{% endif %}" type="submit">
+                        {% if club.id in user_followed_ids %}Unfollow{% else %}Follow{% endif %}
+                    </button>
+                </form>
+            </td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="4">No clubs found.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

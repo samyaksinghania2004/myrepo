@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}ClubsHub{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+    <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+<nav class="navbar is-primary" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+        <a class="navbar-item has-text-weight-bold" href="{% url 'clubs_events:event_feed' %}">ClubsHub</a>
+    </div>
+    <div class="navbar-menu is-active">
+        <div class="navbar-start">
+            {% if request.user.is_authenticated %}
+                <a class="navbar-item" href="{% url 'clubs_events:event_feed' %}">Events</a>
+                <a class="navbar-item" href="{% url 'clubs_events:club_list' %}">Clubs</a>
+                <a class="navbar-item" href="{% url 'clubs_events:my_events' %}">My Events</a>
+                <a class="navbar-item" href="{% url 'rooms:room_list' %}">Discussion Rooms</a>
+                <a class="navbar-item" href="{% url 'core:search' %}">Search</a>
+                <a class="navbar-item" href="{% url 'core:help' %}">Help</a>
+                {% if request.user.role == 'club_rep' or request.user.role == 'institute_admin' or request.user.role == 'system_admin' %}
+                    <a class="navbar-item" href="{% url 'clubs_events:analytics_dashboard' %}">Analytics</a>
+                {% endif %}
+                {% if request.user.role == 'moderator' or request.user.role == 'institute_admin' or request.user.role == 'system_admin' %}
+                    <a class="navbar-item" href="{% url 'rooms:moderation_dashboard' %}">Moderation</a>
+                {% endif %}
+            {% endif %}
+        </div>
+        <div class="navbar-end">
+            {% if request.user.is_authenticated %}
+                <a class="navbar-item" href="{% url 'core:notifications' %}">
+                    Notifications
+                    {% if unread_notifications_count %}
+                        <span class="tag is-light ml-2">{{ unread_notifications_count }}</span>
+                    {% endif %}
+                </a>
+                <a class="navbar-item" href="{% url 'accounts:profile' %}">{{ request.user.display_name }}</a>
+                <a class="navbar-item" href="{% url 'accounts:logout' %}">Log out</a>
+            {% else %}
+                <a class="navbar-item" href="{% url 'accounts:login' %}">Log in</a>
+                <a class="navbar-item" href="{% url 'accounts:signup' %}">Sign up</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+<section class="section">
+    <div class="container">
+        {% if messages %}
+            <div class="mb-5">
+                {% for message in messages %}
+                    <div class="notification {% if message.tags == 'success' %}is-success{% elif message.tags == 'error' %}is-danger{% elif message.tags == 'warning' %}is-warning{% else %}is-info{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </div>
+</section>
+</body>
+</html>

@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Attendance · ClubsHub{% endblock %}
+{% block content %}
+<h1 class="title">Manage attendance — {{ event.title }}</h1>
+<form method="post">
+    {% csrf_token %}
+    <table class="table is-fullwidth is-hoverable">
+        <thead><tr><th>User</th><th>Status</th><th>Attendance</th></tr></thead>
+        <tbody>
+        {% for registration in registrations %}
+            <tr>
+                <td>{{ registration.user.display_name }}</td>
+                <td>{{ registration.get_status_display }}</td>
+                <td>
+                    <div class="select">
+                        <select name="attendance_{{ registration.pk }}">
+                            {% for key, value in attendance_choices %}
+                                <option value="{{ key }}" {% if registration.attendance == key %}selected{% endif %}>{{ value }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="3">No active registrations.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <button class="button is-primary" type="submit">Save attendance</button>
+</form>
+{% endblock %}
