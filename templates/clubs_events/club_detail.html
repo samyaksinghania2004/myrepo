@@ -9,7 +9,11 @@
     </div>
     <div class="hero-actions">
         {% if membership and membership.status == 'active' %}
-            <span class="tag is-link is-light">You are {{ membership.get_local_role_display }}</span>
+            <span class="tag is-link is-light club-membership-badge">You are {{ membership.get_local_role_display }}</span>
+            <form class="club-leave-inline club-leave-inline--mobile" method="post" action="{% url 'clubs_events:club_leave' club.pk %}" data-confirm="Leave {{ club.name }}?">
+                {% csrf_token %}
+                <button class="button is-small club-leave-button" type="submit">Leave club</button>
+            </form>
         {% else %}
             <form method="post" action="{% url 'clubs_events:club_join' club.pk %}">
                 {% csrf_token %}
@@ -17,7 +21,7 @@
             </form>
         {% endif %}
         {% if can_manage_club or can_create_event_for_club or can_create_channel or membership %}
-            <details class="action-menu">
+            <details class="action-menu club-hero-menu {% if membership and membership.status == 'active' and not can_manage_club and not can_create_event_for_club and not can_create_channel %}club-hero-menu--member-only{% endif %}">
                 <summary class="action-menu__toggle button is-dark is-outlined" aria-label="Club options">
                     ...
                 </summary>
@@ -32,7 +36,7 @@
                         <a class="action-menu__item" href="{% url 'clubs_events:club_channel_create' club.pk %}">New channel</a>
                     {% endif %}
                     {% if membership and membership.status == 'active' %}
-                        <form method="post" action="{% url 'clubs_events:club_leave' club.pk %}" data-confirm="Leave {{ club.name }}?">
+                        <form class="club-leave-menu-item" method="post" action="{% url 'clubs_events:club_leave' club.pk %}" data-confirm="Leave {{ club.name }}?">
                             {% csrf_token %}
                             <button class="action-menu__item is-danger" type="submit">Leave club</button>
                         </form>

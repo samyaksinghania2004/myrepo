@@ -18,7 +18,7 @@
     <header class="app-topbar">
         <div class="app-brand-row">
             {% if request.user.is_authenticated %}
-            <button type="button" class="app-menu-toggle button is-dark is-outlined" data-sidebar-toggle aria-label="Toggle sidebar">
+            <button type="button" class="app-menu-toggle button is-dark is-outlined" data-sidebar-toggle aria-label="Toggle sidebar" aria-controls="app-sidebar" aria-expanded="false">
                 &#9776;
             </button>
             {% endif %}
@@ -54,7 +54,7 @@
 
     <div class="app-body{% if not request.user.is_authenticated %} app-body--no-sidebar{% endif %}">
         {% if request.user.is_authenticated %}
-        <aside class="app-sidebar" data-app-sidebar>
+        <aside class="app-sidebar" id="app-sidebar" data-app-sidebar aria-hidden="false">
             <div class="sidebar-group">
                 <p class="sidebar-label">Explore</p>
                 <a class="sidebar-link" href="{% url 'clubs_events:event_feed' %}">Events</a>
@@ -80,6 +80,7 @@
             </div>
             {% endif %}
         </aside>
+        <div class="app-sidebar-backdrop" data-sidebar-backdrop hidden></div>
         {% endif %}
 
         <main class="app-main">
