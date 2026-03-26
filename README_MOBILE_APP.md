@@ -29,6 +29,31 @@ python manage.py runserver
 
 Open the site at the URL printed by Django.
 
+## Real app-style install on phone
+
+For a proper `Install app` prompt in Chrome on Android, use an HTTPS link.
+
+1. Start the Django server:
+
+```bash
+cd myrepo
+./start_server.sh
+```
+
+2. In a second terminal on the same machine, start the HTTPS tunnel:
+
+```bash
+cd myrepo
+./start_app_tunnel.sh
+```
+
+3. Copy the `https://...trycloudflare.com` link shown by `cloudflared`.
+4. Open that HTTPS link in Chrome on your phone.
+5. Log in and refresh once.
+6. Tap `Install app`, or use Chrome menu -> `Install app`.
+
+If the install button does not appear immediately, wait a few seconds and refresh once.
+
 ## Install as an app on Android
 
 1. Open the site in Chrome.
