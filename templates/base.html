@@ -37,17 +37,17 @@
         </div>
         {% if request.user.is_authenticated %}
         <div class="app-topbar-actions">
-            <button type="button" class="button is-dark is-outlined" data-theme-toggle>
+            <button type="button" class="button is-dark is-outlined app-topbar-button app-topbar-button--theme" data-theme-toggle>
                 Toggle theme
             </button>
-            <a class="button is-dark is-outlined" href="{% url 'core:notifications' %}">
+            <a class="button is-dark is-outlined app-topbar-button app-topbar-button--notifications" href="{% url 'core:notifications' %}">
                 Notifications
                 {% if unread_notifications_count %}
                     <span class="badge-pill">{{ unread_notifications_count }}</span>
                 {% endif %}
             </a>
-            <a class="button is-dark is-outlined" href="{% url 'accounts:profile' %}">{{ request.user.display_name }}</a>
-            <a class="button is-danger is-light" href="{% url 'accounts:logout' %}">Log out</a>
+            <a class="button is-dark is-outlined app-topbar-button app-topbar-button--profile" href="{% url 'accounts:profile' %}">{{ request.user.display_name }}</a>
+            <a class="button is-danger is-light app-topbar-button app-topbar-button--logout" href="{% url 'accounts:logout' %}">Log out</a>
         </div>
         {% endif %}
     </header>
