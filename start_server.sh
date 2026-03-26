@@ -8,7 +8,6 @@ if [[ ! -d ".venv" ]]; then
   echo "Error: .venv not found in $ROOT_DIR"
   exit 1
 fi
-
 source .venv/bin/activate
 
 if [[ ! -f ".env" ]]; then
