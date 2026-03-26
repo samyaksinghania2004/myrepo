@@ -40,7 +40,7 @@
         <div class="app-topbar-actions">
             <a class="button is-dark is-outlined app-topbar-button app-topbar-button--profile" href="{% url 'accounts:profile' %}">{{ request.user.display_name }}</a>
             <a class="button is-danger is-light app-topbar-button app-topbar-button--logout" href="{% url 'accounts:logout' %}">Log out</a>
-            <a class="button is-dark is-outlined app-topbar-button app-topbar-button--notifications" href="{% url 'core:notifications' %}" aria-label="Notifications">
+            <a class="button is-dark is-outlined app-topbar-button app-topbar-button--notifications" href="{% url 'core:notifications' %}" aria-label="Notifications" data-notifications-button data-notifications-page="{% if request.resolver_match.url_name == 'notifications' %}1{% else %}0{% endif %}" data-notifications-close-url="{% url 'clubs_events:event_feed' %}">
                 <span class="app-topbar-button__icon" aria-hidden="true">&#128276;</span>
                 <span class="app-topbar-button__label">Notifications</span>
                 {% if unread_notifications_count %}

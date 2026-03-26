@@ -7,6 +7,7 @@
   const desktopSidebarQuery = window.matchMedia('(min-width: 1025px)');
   const themeToggle = document.querySelector('[data-theme-toggle]');
   const themeIcon = document.querySelector('[data-theme-icon]');
+  const notificationsButton = document.querySelector('[data-notifications-button]');
   const enableAlertsButton = document.querySelector('[data-enable-browser-notifications]');
   const toastRoot = document.getElementById('toast-root');
   const themeKey = 'clubshub-theme';
@@ -155,6 +156,28 @@
       html.setAttribute('data-theme', next);
       localStorage.setItem(themeKey, next);
       syncThemeToggle();
+    });
+  }
+
+  if (notificationsButton?.dataset.notificationsPage === '1') {
+    notificationsButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      const referrer = document.referrer;
+      if (referrer) {
+        try {
+          const referrerUrl = new URL(referrer, window.location.origin);
+          if (referrerUrl.origin === window.location.origin && referrerUrl.href !== window.location.href) {
+            window.history.back();
+            return;
+          }
+        } catch (error) {
+          console.debug('Notification close referrer parse failed', error);
+        }
+      }
+      const fallbackUrl = notificationsButton.dataset.notificationsCloseUrl;
+      if (fallbackUrl) {
+        window.location.href = fallbackUrl;
+      }
     });
   }
 
