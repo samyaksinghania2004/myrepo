@@ -14,7 +14,7 @@ if [[ ! -f ".env" ]]; then
   echo "Error: .env not found in $ROOT_DIR"
   exit 1
 fi
-
+#comment
 set -a
 source .env
 set +a
