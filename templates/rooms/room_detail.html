@@ -1,93 +1,182 @@
 {% extends 'base.html' %}
-{% block title %}{{ room.name }} · ClubsHub{% endblock %}
+{% block title %}{{ room.name }} - ClubsHub{% endblock %}
 {% block content %}
-<div class="columns">
-    <div class="column is-three-quarters">
-        <div class="box">
-            <div class="level">
-                <div class="level-left">
-                    <div>
-                        <h1 class="title">{{ room.name }}</h1>
-                        <p class="subtitle">{{ room.get_room_type_display }} · {{ room.get_access_type_display }}</p>
-                        {% if room.description %}<p>{{ room.description }}</p>{% endif %}
-                    </div>
-                </div>
-                <div class="level-right">
-                    <div class="tags has-addons">
-                        <span class="tag is-dark">Your handle</span>
-                        <span class="tag is-primary">{{ handle.handle_name }}</span>
-                    </div>
-                </div>
-            </div>
-            <div class="content room-messages">
-                {% for message_obj in messages_qs %}
-                    <article class="message is-light message-card">
-                        <div class="message-body">
-                            <div class="is-flex is-justify-content-space-between">
-                                <div>
-                                    <span class="tag is-primary is-light handle-chip">{{ message_obj.handle.handle_name }}</span>
-                                    <span class="is-size-7 has-text-grey">{{ message_obj.created_at }}</span>
-                                    {% if message_obj.is_edited %}<span class="tag is-light">edited</span>{% endif %}
-                                </div>
-                                <div>
-                                    {% if message_obj.handle.user_id == request.user.id and not message_obj.is_deleted %}
-                                        <a class="button is-small is-light" href="{% url 'rooms:message_edit' room.pk message_obj.pk %}">Edit</a>
-                                        <a class="button is-small is-light" href="{% url 'rooms:message_delete' room.pk message_obj.pk %}">Delete</a>
-                                    {% endif %}
-                                    {% if not message_obj.is_deleted %}
-                                        <a class="button is-small is-danger is-light" href="{% url 'rooms:report_message' room.pk message_obj.pk %}">Report</a>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <p class="mt-2 {% if message_obj.is_deleted %}muted-message{% endif %}">
-                                {% if message_obj.is_deleted %}This message was deleted by moderation or the author.{% else %}{{ message_obj.text|linebreaksbr }}{% endif %}
-                            </p>
-                        </div>
-                    </article>
-                {% empty %}
-                    <div class="notification is-light">No messages yet. Start the conversation.</div>
-                {% endfor %}
-            </div>
-        </div>
-        <div class="box">
-            <h2 class="title is-5">Post a message</h2>
-            {% if handle.is_muted %}
-                <div class="notification is-warning">You are muted in this room and cannot post.</div>
-            {% endif %}
-            <form method="post">
-                {% csrf_token %}
-                {% for field in form %}
-                    <div class="field">
-                        <div class="control">{{ field }}</div>
-                        {% for error in field.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
-                    </div>
-                {% endfor %}
-                <button class="button is-primary" type="submit">Send</button>
-            </form>
-        </div>
+<section class="page-hero room-hero">
+    <div>
+        <p class="eyebrow">{{ room.get_room_type_display }} - {{ room.get_access_type_display }}</p>
+        <h1 class="page-title">{{ room.name }}</h1>
+        {% if room.description %}<p class="page-subtitle">{{ room.description }}</p>{% endif %}
     </div>
-    <div class="column">
-        <div class="box">
-            <h2 class="title is-5">Room controls</h2>
-            {% if can_manage_room %}
-                <a class="button is-link is-light mb-2" href="{% url 'rooms:room_edit' room.pk %}">Edit room</a>
-            {% endif %}
-            <p><strong>Messages:</strong> {{ messages_qs|length }}</p>
+    <div class="hero-actions">
+        {% if handle and handle.status == 'approved' %}
+            <span class="tag is-link is-light">Handle: {{ handle.handle_name }}</span>
+        {% elif read_only_mode %}
+            <span class="tag is-dark is-light">Moderator preview mode</span>
+        {% endif %}
+        <details class="action-menu">
+            <summary class="action-menu__toggle button is-dark is-outlined" aria-label="Room options">
+                ...
+            </summary>
+            <div class="action-menu__panel">
+                <button class="action-menu__item" type="button" data-modal-target="room-members-modal">
+                    View members
+                </button>
+                {% if handle and handle.status == 'approved' %}
+                    <form method="post" action="{% url 'rooms:leave_room' room.pk %}" data-confirm="Leave {{ room.name }}?">
+                        {% csrf_token %}
+                        <button class="action-menu__item is-danger" type="submit">Leave room</button>
+                    </form>
+                {% endif %}
+            </div>
+        </details>
+        {% if can_manage_room %}
+            <a class="button is-dark is-outlined" href="{% url 'rooms:room_edit' room.pk %}">Edit room</a>
+        {% endif %}
+    </div>
+</section>
+
+{% if review_mode %}
+    <div class="review-banner">
+        <strong>Review mode:</strong> you are looking at this room in the context of a reported message.
+    </div>
+{% endif %}
+
+<div class="room-layout">
+    <section
+        class="surface-card room-stream-card"
+        data-live-chat="room"
+        data-messages-url="{% url 'rooms:room_messages' room.pk %}"
+        data-send-url="{% url 'rooms:room_send' room.pk %}"
+        data-chat-last="{% if last_message_at %}{{ last_message_at|date:'c' }}{% endif %}"
+        data-show-identities="{% if show_real_identities %}true{% else %}false{% endif %}"
+    >
+        <div class="message-stream">
+            {% for message_obj in messages_qs %}
+                <article id="message-{{ message_obj.pk }}" data-message-id="{{ message_obj.pk }}" class="chat-message {% if focus_message_id == message_obj.pk|stringformat:'s' %}is-focused{% endif %}">
+                    <div class="chat-message__header">
+                        <div>
+                            <strong>{{ message_obj.handle.handle_name }}</strong>
+                            {% if show_real_identities %}
+                                <span class="muted-text">- {{ message_obj.handle.user.display_name }} ({{ message_obj.handle.user.email }})</span>
+                            {% endif %}
+                            <span class="muted-text">- {{ message_obj.created_at }}</span>
+                            {% if message_obj.is_edited %}<span class="tag is-dark is-light">edited</span>{% endif %}
+                        </div>
+                        <div class="message-actions">
+                            {% if message_obj.pk in editable_message_ids %}
+                                <a class="button is-small is-dark is-outlined" href="{% url 'rooms:message_edit' room.pk message_obj.pk %}">Edit</a>
+                            {% endif %}
+                            {% if message_obj.pk in deletable_message_ids %}
+                                <form method="post" action="{% url 'rooms:message_delete' room.pk message_obj.pk %}" class="inline-form">
+                                    {% csrf_token %}
+                                    <button class="button is-small is-dark is-outlined" type="submit">Delete</button>
+                                </form>
+                            {% endif %}
+                            {% if not message_obj.is_deleted and message_obj.handle.user_id != request.user.id %}
+                                <a class="button is-small is-danger is-light" href="{% url 'rooms:report_message' room.pk message_obj.pk %}">Report</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="chat-message__body {% if message_obj.is_deleted %}muted-message{% endif %}">
+                        {% if message_obj.is_deleted %}
+                            This message was deleted by the author or a moderator.
+                        {% else %}
+                            {{ message_obj.text|linebreaksbr }}
+                        {% endif %}
+                    </div>
+                </article>
+            {% empty %}
+                <div class="empty-state compact-empty">
+                    <p>No messages yet. Start the conversation.</p>
+                </div>
+            {% endfor %}
         </div>
+
+        {% if not read_only_mode %}
+            <div class="composer-card composer-card--sticky">
+                {% if handle and handle.is_muted %}
+                    <div class="flash-card flash-warning">You are muted in this room and cannot post new messages.</div>
+                {% endif %}
+                <form method="post" class="composer-form">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="composer-field">
+                            {{ field }}
+                            {% for error in field.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                        </div>
+                    {% endfor %}
+                    <button class="button is-link" type="submit">Send</button>
+                </form>
+            </div>
+        {% endif %}
+    </section>
+
+    <aside class="room-sidepanel stack-gap">
+        {% if can_manage_room and room.access_type == 'private_invite_only' %}
+            <article class="surface-card compact-card">
+                <div class="surface-card__header"><h2>Invite someone</h2></div>
+                <form method="post" action="{% url 'rooms:invite_user' room.pk %}" class="stack-gap">
+                    {% csrf_token %}
+                    {{ invite_form.identifier }}
+                    <button class="button is-link is-light" type="submit">Send invite</button>
+                </form>
+            </article>
+        {% endif %}
+
         {% if pending_handles %}
-            <div class="box">
-                <h2 class="title is-5">Pending join requests</h2>
+            <article class="surface-card compact-card">
+                <div class="surface-card__header"><h2>Pending join requests</h2></div>
                 {% for pending in pending_handles %}
-                    <div class="mb-3">
-                        <p><strong>{{ pending.handle_name }}</strong> — {{ pending.user.display_name }}</p>
-                        <div class="buttons mt-2">
-                            <a class="button is-small is-success is-light" href="{% url 'rooms:approve_handle' room.pk pending.pk %}">Approve</a>
+                    <div class="pending-item">
+                        <p><strong>{{ pending.handle_name }}</strong></p>
+                        <p class="muted-text">{{ pending.user.display_name }}</p>
+                        <div class="surface-card__actions">
+                            <a class="button is-small is-link is-light" href="{% url 'rooms:approve_handle' room.pk pending.pk %}">Approve</a>
                             <a class="button is-small is-danger is-light" href="{% url 'rooms:reject_handle' room.pk pending.pk %}">Reject</a>
                         </div>
                     </div>
                 {% endfor %}
-            </div>
+            </article>
         {% endif %}
+
+        {% if invites %}
+            <article class="surface-card compact-card">
+                <div class="surface-card__header"><h2>Outstanding invites</h2></div>
+                <ul class="simple-list">
+                    {% for invite in invites %}
+                        <li>{{ invite.recipient.display_name }} <span class="tag is-dark is-light">{{ invite.get_status_display }}</span></li>
+                    {% empty %}
+                        <li class="muted-text">No invites sent yet.</li>
+                    {% endfor %}
+                </ul>
+            </article>
+        {% endif %}
+    </aside>
+</div>
+<div class="modal is-hidden" id="room-members-modal" data-modal>
+    <div class="modal__backdrop" data-modal-close></div>
+    <div class="modal__panel">
+        <div class="modal__header">
+            <div>
+                <p class="eyebrow">{{ room.get_room_type_display }}</p>
+                <h3>Room members</h3>
+            </div>
+            <button type="button" class="modal__close button is-dark is-outlined" data-modal-close>
+                Close
+            </button>
+        </div>
+        <div class="modal__body">
+            <ul class="simple-list">
+                {% for participant in participants %}
+                    <li>
+                        <span>{{ participant.handle_name }}</span>
+                        {% if show_real_identities %}<span class="muted-text">- {{ participant.user.display_name }}</span>{% endif %}
+                    </li>
+                {% empty %}
+                    <li class="muted-text">No participants yet.</li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
 </div>
 {% endblock %}

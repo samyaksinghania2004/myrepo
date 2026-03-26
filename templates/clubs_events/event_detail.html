@@ -1,71 +1,68 @@
 {% extends 'base.html' %}
-{% block title %}{{ event.title }} · ClubsHub{% endblock %}
+{% block title %}{{ event.title }} - ClubsHub{% endblock %}
 {% block content %}
-<div class="columns">
-    <div class="column is-two-thirds">
-        <div class="box">
-            <div class="level">
-                <div class="level-left">
-                    <div>
-                        <h1 class="title">{{ event.title }}</h1>
-                        <p class="subtitle">{{ event.club.name }}</p>
-                    </div>
-                </div>
-                <div class="level-right">
-                    <span class="tag {% if event.status == 'published' %}is-success{% elif event.status == 'draft' %}is-warning{% elif event.status == 'cancelled' %}is-danger{% else %}is-light{% endif %}">
-                        {{ event.get_status_display }}
-                    </span>
-                </div>
-            </div>
-            <div class="content">
-                <p>{{ event.description }}</p>
-                <p><strong>Venue:</strong> {{ event.venue }}</p>
-                <p><strong>When:</strong> {{ event.start_time }} → {{ event.end_time }}</p>
-                <p><strong>Capacity:</strong> {% if event.capacity %}{{ event.registered_count }}/{{ event.capacity }}{% else %}Open{% endif %}</p>
-                {% if event.tags %}<p><strong>Tags:</strong> {{ event.tags }}</p>{% endif %}
-                {% if event.status == 'cancelled' %}<p><strong>Cancellation reason:</strong> {{ event.cancellation_reason }}</p>{% endif %}
-            </div>
-            <div class="buttons">
-                {% if registration and registration.status == 'registered' or registration and registration.status == 'waitlisted' %}
-                    <a class="button is-warning" href="{% url 'clubs_events:event_cancel_registration' event.pk %}">Cancel registration</a>
-                {% elif event.is_open_for_registration %}
-                    <a class="button is-primary" href="{% url 'clubs_events:event_register' event.pk %}">Register</a>
-                {% endif %}
-                {% if can_manage_event %}
-                    <a class="button is-link is-light" href="{% url 'clubs_events:event_edit' event.pk %}">Edit</a>
-                    <a class="button is-danger is-light" href="{% url 'clubs_events:event_cancel' event.pk %}">Cancel event</a>
-                    <a class="button is-info is-light" href="{% url 'clubs_events:attendance_manage' event.pk %}">Manage attendance</a>
-                {% endif %}
-            </div>
-            {% if registration %}
-                <p><strong>Your status:</strong> {{ registration.get_status_display }}</p>
-            {% endif %}
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">{{ event.club.name }}</p>
+        <h1 class="page-title">{{ event.title }}</h1>
+        <p class="page-subtitle">{{ event.description }}</p>
+        <div class="meta-row">
+            <span>{{ event.venue }}</span>
+            <span>{{ event.start_time }} to {{ event.end_time }}</span>
+            <span>{% if event.capacity %}{{ event.registered_count }}/{{ event.capacity }} registered{% else %}Open capacity{% endif %}</span>
         </div>
     </div>
-    <div class="column">
-        <div class="box">
-            <h2 class="title is-5">Discussion rooms</h2>
-            {% if event.discussion_rooms.all %}
-                <ul>
-                    {% for room in event.discussion_rooms.all %}
-                        <li><a href="{% url 'rooms:room_detail' room.pk %}">{{ room.name }}</a></li>
-                    {% empty %}
-                        <li>No room linked yet.</li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p>No room linked yet.</p>
-            {% endif %}
-        </div>
-        
-        <div class="box">
-            <h2 class="title is-5">Announcements</h2>
-            {% if can_post_announcement %}<a class="button is-small" href="{% url 'clubs_events:announcement_create' 'event' event.pk %}">Post</a>{% endif %}
-            {% for ann in announcements %}<p><strong>{{ ann.title }}</strong> - {{ ann.body }}</p>{% empty %}<p>No announcements.</p>{% endfor %}
-        </div>
+    <div class="hero-actions">
+        <span class="tag is-link is-light">{{ event.get_status_display }}</span>
+        {% if registration and registration.status == 'registered' or registration and registration.status == 'waitlisted' %}
+            <a class="button is-warning" href="{% url 'clubs_events:event_cancel_registration' event.pk %}">Cancel registration</a>
+        {% elif event.is_open_for_registration %}
+            <a class="button is-link" href="{% url 'clubs_events:event_register' event.pk %}">Register</a>
+        {% endif %}
+        {% if can_manage_event %}
+            <a class="button is-dark is-outlined" href="{% url 'clubs_events:event_edit' event.pk %}">Edit</a>
+            <a class="button is-danger is-light" href="{% url 'clubs_events:event_cancel' event.pk %}">Cancel event</a>
+            <a class="button is-dark is-outlined" href="{% url 'clubs_events:attendance_manage' event.pk %}">Attendance</a>
+        {% endif %}
+        {% if discuss_url %}
+            <a class="button is-link is-light" href="{{ discuss_url }}">Discuss</a>
+        {% endif %}
+    </div>
+</section>
+
+<div class="dashboard-grid">
+    <section class="stack-gap">
+        <article class="surface-card">
+            <div class="surface-card__header">
+                <div class="tab-row">
+                    <h2>Announcements</h2>
+                    <div class="tab-actions">
+                        {% if discuss_url %}
+                            <a class="button is-link is-light" href="{{ discuss_url }}">Discuss</a>
+                        {% endif %}
+                        {% if can_post_announcement %}
+                            <a class="button is-link is-light" href="{% url 'clubs_events:announcement_create' 'event' event.pk %}">Post announcement</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% for ann in announcements %}
+                <article id="announcement-{{ ann.pk }}" class="announcement-card">
+                    <div class="announcement-card__header">
+                        <h3>{{ ann.title }}</h3>
+                        <span class="muted-text">{{ ann.created_at }}</span>
+                    </div>
+                    <p>{{ ann.body|linebreaksbr }}</p>
+                </article>
+            {% empty %}
+                <div class="empty-state compact-empty"><p>No announcements yet.</p></div>
+            {% endfor %}
+        </article>
+
         {% if registrations %}
-            <div class="box">
-                <h2 class="title is-5">Registrations</h2>
+        <article class="surface-card">
+            <div class="surface-card__header"><h2>Registrations</h2></div>
+            <div class="table-wrap">
                 <table class="table is-fullwidth">
                     <thead><tr><th>User</th><th>Status</th><th>Attendance</th></tr></thead>
                     <tbody>
@@ -79,7 +76,19 @@
                     </tbody>
                 </table>
             </div>
+        </article>
         {% endif %}
-    </div>
+    </section>
+
+    <aside class="stack-gap">
+        <article class="surface-card compact-card">
+            <div class="surface-card__header"><h2>Your status</h2></div>
+            {% if registration %}
+                <p><strong>{{ registration.get_status_display }}</strong></p>
+            {% else %}
+                <p class="muted-text">You have not registered yet.</p>
+            {% endif %}
+        </article>
+    </aside>
 </div>
 {% endblock %}

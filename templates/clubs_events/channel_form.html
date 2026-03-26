@@ -1,26 +1,24 @@
 {% extends 'base.html' %}
-{% block title %}{{ mode }} Event · ClubsHub{% endblock %}
+{% block title %}New Channel · ClubsHub{% endblock %}
 {% block content %}
 <div class="form-shell">
     <div class="surface-card form-card">
         <div class="surface-card__header">
             <div>
-                <p class="eyebrow">Event management</p>
-                <h1>{{ mode }} event</h1>
+                <p class="eyebrow">Channel</p>
+                <h1>Create a channel for {{ club.name }}</h1>
             </div>
         </div>
         <form method="post" class="stack-gap">
             {% csrf_token %}
-            {{ form.non_field_errors }}
             {% for field in form %}
                 <div>
                     <label class="label">{{ field.label }}</label>
                     {{ field }}
-                    {% if field.help_text %}<p class="help">{{ field.help_text }}</p>{% endif %}
                     {% for error in field.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
                 </div>
             {% endfor %}
-            <button class="button is-link" type="submit">Save event</button>
+            <button class="button is-link" type="submit">Create channel</button>
         </form>
     </div>
 </div>

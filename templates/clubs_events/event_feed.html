@@ -1,107 +1,121 @@
 {% extends 'base.html' %}
-{% block title %}Events · ClubsHub{% endblock %}
+{% block title %}Events - ClubsHub{% endblock %}
 {% block content %}
-<div class="level">
-    <div class="level-left"><h1 class="title">Upcoming Events</h1></div>
-    <div class="level-right">
-        {% if request.user.role == 'institute_admin' or request.user.role == 'system_admin' %}
-            <a class="button is-primary" href="{% url 'clubs_events:event_create' %}">Create Event</a>
-        {% endif %}
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">Discover</p>
+        <h1 class="page-title">Upcoming Events</h1>
+        <p class="page-subtitle">Track registrations, browse campus activity and manage event publishing from one place.</p>
     </div>
-</div>
+    {% if can_create_event_any %}
+        <a class="button is-link is-medium" href="{% url 'clubs_events:event_create' %}">Create event</a>
+    {% endif %}
+</section>
 
-<div class="box">
-    <form method="get">
-        <div class="columns is-multiline">
-            <div class="column is-3">
-                <label class="label">Keyword</label>
-                <input class="input" type="text" name="q" value="{{ q }}" maxlength="50" placeholder="Search events">
-            </div>
-            <div class="column is-2">
-                <label class="label">Club</label>
-                <div class="select is-fullwidth">
-                    <select name="club">
-                        <option value="">All clubs</option>
-                        {% for club in clubs %}
-                            <option value="{{ club.pk }}" {% if selected_club == club.id|stringformat:'s' %}selected{% endif %}>{{ club.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-            <div class="column is-2">
-                <label class="label">Tag</label>
-                <input class="input" type="text" name="tag" value="{{ tag }}" placeholder="workshop">
-            </div>
-            <div class="column is-2">
-                <label class="label">From</label>
-                <input class="input" type="date" name="date_from" value="{{ date_from }}">
-            </div>
-            <div class="column is-2">
-                <label class="label">To</label>
-                <input class="input" type="date" name="date_to" value="{{ date_to }}">
-            </div>
-            <div class="column is-1 is-flex is-align-items-flex-end">
-                <button class="button is-link is-fullwidth" type="submit">Filter</button>
+<section class="panel-card">
+    <details class="filter-disclosure" {% if q or selected_club or tag or date_from or date_to %}open{% endif %}>
+        <summary class="filter-summary">
+            <span>Filters</span>
+            <span class="muted-text">Refine upcoming events</span>
+        </summary>
+        <form method="get" class="filter-grid">
+        <div>
+            <label class="label">Keyword</label>
+            <input class="input" type="text" name="q" value="{{ q }}" maxlength="50" placeholder="Hackathon, workshop, panel...">
+        </div>
+        <div>
+            <label class="label">Club</label>
+            <div class="select is-fullwidth">
+                <select name="club">
+                    <option value="">All clubs</option>
+                    {% for club in clubs %}
+                        <option value="{{ club.pk }}" {% if selected_club == club.id|stringformat:'s' or selected_club == club.pk|stringformat:'s' %}selected{% endif %}>{{ club.name }}</option>
+                    {% endfor %}
+                </select>
             </div>
         </div>
-    </form>
-</div>
+        <div>
+            <label class="label">Tag</label>
+            <input class="input" type="text" name="tag" value="{{ tag }}" placeholder="robotics">
+        </div>
+        <div>
+            <label class="label">From</label>
+            <input class="input" type="date" name="date_from" value="{{ date_from }}">
+        </div>
+        <div>
+            <label class="label">To</label>
+            <input class="input" type="date" name="date_to" value="{{ date_to }}">
+        </div>
+            <div class="filter-actions">
+                <button class="button is-link is-fullwidth" type="submit">Apply filters</button>
+                <a class="button is-light is-fullwidth" href="{% url 'clubs_events:event_feed' %}">Reset</a>
+            </div>
+        </form>
+    </details>
+</section>
 
-<div class="columns">
-    <div class="column is-two-thirds">
+<div class="dashboard-grid">
+    <section class="stack-gap">
         {% if events %}
             {% for event in events %}
-                <div class="box">
-                    <div class="level">
-                        <div class="level-left">
-                            <div>
-                                <h2 class="title is-5 mb-1"><a href="{% url 'clubs_events:event_detail' event.pk %}">{{ event.title }}</a></h2>
-                                <p class="subtitle is-6 mb-0">{{ event.club.name }} · {{ event.venue }}</p>
-                                <p class="is-size-7 has-text-grey">{{ event.start_time }} → {{ event.end_time }}</p>
-                                {% if event.tags %}<p class="is-size-7">Tags: {{ event.tags }}</p>{% endif %}
-                            </div>
+                <article class="surface-card event-card">
+                    <div class="surface-card__header">
+                        <div>
+                            <p class="eyebrow">{{ event.club.name }}</p>
+                            <h2><a href="{% url 'clubs_events:event_detail' event.pk %}">{{ event.title }}</a></h2>
                         </div>
-                        <div class="level-right">
-                            <div class="has-text-right">
-                                <p><strong>Capacity:</strong> {% if event.capacity %}{{ event.registered_count }}/{{ event.capacity }}{% else %}Open{% endif %}</p>
-                                <a class="button is-small is-link is-light mt-2" href="{% url 'clubs_events:event_detail' event.pk %}">View details</a>
-                            </div>
-                        </div>
+                        <span class="tag is-link is-light">{{ event.get_status_display }}</span>
                     </div>
-                </div>
+                    <p class="muted-text">{{ event.venue }} - {{ event.start_time }} to {{ event.end_time }}</p>
+                    <p>{{ event.description|truncatechars:200 }}</p>
+                    <div class="meta-row">
+                        <span>Capacity: {% if event.capacity %}{{ event.registered_count }}/{{ event.capacity }}{% else %}Open{% endif %}</span>
+                        {% if event.tags %}<span>Tags: {{ event.tags }}</span>{% endif %}
+                    </div>
+                    <div class="surface-card__actions">
+                        <a class="button is-link" href="{% url 'clubs_events:event_detail' event.pk %}">Open event</a>
+                        {% if event.discuss_url %}
+                            <a class="button is-link is-light" href="{{ event.discuss_url }}">Discuss</a>
+                        {% endif %}
+                    </div>
+                </article>
             {% endfor %}
         {% else %}
-            <div class="notification is-light">No events match the current filters.</div>
+            <div class="empty-state">
+                <h2>No upcoming events match these filters</h2>
+                <p>Try broadening the search, or create one for your club.</p>
+            </div>
         {% endif %}
-    </div>
-    <div class="column">
-        <div class="box">
-            <h2 class="title is-5">My upcoming registrations</h2>
+    </section>
+
+    <aside class="stack-gap">
+        <div class="surface-card compact-card">
+            <div class="surface-card__header"><h2>My registrations</h2></div>
             {% if my_registrations %}
-                <ul>
+                <ul class="simple-list">
                     {% for registration in my_registrations %}
                         <li>
                             <a href="{% url 'clubs_events:event_detail' registration.event.pk %}">{{ registration.event.title }}</a>
-                            <span class="tag is-light">{{ registration.get_status_display }}</span>
+                            <span class="tag is-dark is-light">{{ registration.get_status_display }}</span>
                         </li>
                     {% endfor %}
                 </ul>
             {% else %}
-                <p>No registered or waitlisted events yet.</p>
+                <p class="muted-text">You are not registered or waitlisted for any upcoming events.</p>
             {% endif %}
         </div>
-        <div class="box">
-            <h2 class="title is-5">From clubs you follow</h2>
+        <div class="surface-card compact-card">
+            <div class="surface-card__header"><h2>From your clubs</h2></div>
             {% if followed_events %}
-                <ul>
+                <ul class="simple-list">
                     {% for event in followed_events %}
                         <li><a href="{% url 'clubs_events:event_detail' event.pk %}">{{ event.title }}</a></li>
                     {% endfor %}
                 </ul>
             {% else %}
-                <p>Follow clubs to personalise this section.</p>
+                <p class="muted-text">Join clubs to personalise this panel.</p>
             {% endif %}
         </div>
-    </div>
+    </aside>
 </div>
 {% endblock %}

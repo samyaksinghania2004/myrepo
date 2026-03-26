@@ -1,20 +1,63 @@
 {% extends 'base.html' %}
-{% block title %}Clubs{% endblock %}
+{% block title %}Clubs - ClubsHub{% endblock %}
 {% block content %}
-<h1 class="title">Clubs</h1>
-<div class="columns is-multiline">
-{% for club in clubs %}
-  <div class="column is-half">
-    <div class="box">
-      <h2 class="subtitle"><a href="{% url 'clubs_events:club_detail' club.pk %}">{{ club.name }}</a></h2>
-      <p>{{ club.description }}</p>
-      {% if club.id in active_membership_ids %}
-      <form method="post" action="{% url 'clubs_events:club_leave' club.pk %}">{% csrf_token %}<button class="button is-small">Leave</button></form>
-      {% else %}
-      <form method="post" action="{% url 'clubs_events:club_join' club.pk %}">{% csrf_token %}<button class="button is-small is-primary">Join</button></form>
-      {% endif %}
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">Community</p>
+        <h1 class="page-title">Clubs</h1>
+        <p class="page-subtitle">Join, leave and manage your clubs from a cleaner membership dashboard.</p>
     </div>
-  </div>
-{% endfor %}
+    {% if can_create_club %}
+        <a class="button is-link is-medium" href="{% url 'clubs_events:club_create' %}">Create club</a>
+    {% endif %}
+</section>
+
+<section class="panel-card">
+    <form method="get" class="field has-addons">
+        <div class="control is-expanded">
+            <input class="input" type="text" name="q" value="{{ q }}" placeholder="Search clubs by name or category">
+        </div>
+        <div class="control">
+            <button class="button is-link" type="submit">Search</button>
+        </div>
+    </form>
+</section>
+
+<div class="cards-grid">
+    {% for club in clubs %}
+        <article class="surface-card">
+            <div class="surface-card__header">
+                <div>
+                    <p class="eyebrow">{{ club.category }}</p>
+                    <h2 class="club-card__title">
+                        <a href="{% url 'clubs_events:club_detail' club.pk %}">{{ club.name }}</a>
+                    </h2>
+                </div>
+                {% if club.id in manageable_club_ids %}
+                    <span class="tag is-link is-light">Coordinator access</span>
+                {% elif club.id in active_membership_ids %}
+                    <span class="tag is-dark is-light">Member</span>
+                {% endif %}
+            </div>
+            <div class="meta-row">
+                <span>{{ club.follower_count }} members</span>
+                <span>{{ club.contact_email }}</span>
+            </div>
+            <div class="surface-card__actions">
+                <a class="button is-dark is-outlined" href="{% url 'clubs_events:club_detail' club.pk %}">View club</a>
+                {% if club.id not in active_membership_ids %}
+                    <form method="post" action="{% url 'clubs_events:club_join' club.pk %}">
+                        {% csrf_token %}
+                        <button class="button is-link" type="submit">Join</button>
+                    </form>
+                {% endif %}
+            </div>
+        </article>
+    {% empty %}
+        <div class="empty-state">
+            <h2>No clubs found</h2>
+            <p>Try a different keyword.</p>
+        </div>
+    {% endfor %}
 </div>
 {% endblock %}

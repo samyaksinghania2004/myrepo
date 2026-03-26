@@ -1,6 +1,15 @@
 from django.contrib import admin
 
-from .models import Announcement, Club, ClubFollow, ClubMembership, Event, Registration
+from .models import (
+    Announcement,
+    Club,
+    ClubChannel,
+    ClubFollow,
+    ClubMembership,
+    ClubMessage,
+    Event,
+    Registration,
+)
 
 
 @admin.register(Club)
@@ -32,3 +41,15 @@ class ClubFollowAdmin(admin.ModelAdmin):
 @admin.register(Announcement)
 class AnnouncementAdmin(admin.ModelAdmin):
     list_display = ("title", "author", "target_type", "created_at", "is_active")
+
+
+@admin.register(ClubChannel)
+class ClubChannelAdmin(admin.ModelAdmin):
+    list_display = ("name", "club", "channel_type", "is_private", "is_read_only", "created_at")
+    list_filter = ("channel_type", "is_private", "is_read_only")
+
+
+@admin.register(ClubMessage)
+class ClubMessageAdmin(admin.ModelAdmin):
+    list_display = ("channel", "author", "created_at", "is_system")
+    list_filter = ("is_system",)

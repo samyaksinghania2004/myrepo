@@ -147,7 +147,7 @@ class Event(models.Model):
 
     def clean(self) -> None:
         super().clean()
-        if self.end_time <= self.start_time:
+        if self.start_time and self.end_time and self.end_time <= self.start_time:
             raise ValidationError("Event end time must be after the start time.")
         if self.capacity is not None and self.capacity <= 0:
             raise ValidationError("Capacity must be a positive number.")
@@ -186,7 +186,7 @@ class Event(models.Model):
 
     @property
     def is_open_for_registration(self) -> bool:
-        return self.status == self.Status.PUBLISHED and timezone.now() < self.start_time
+        return self.status == self.Status.PUBLISHED and timezone.now() < self.end_time
 
     def seats_remaining(self) -> int | None:
         if self.capacity is None:
@@ -384,3 +384,104 @@ class Announcement(models.Model):
         target_count = sum(bool(x) for x in [self.club, self.event, self.room])
         if target_count != 1:
             raise ValidationError("Announcement must target exactly one object.")
+
+
+class ClubChannel(models.Model):
+    class ChannelType(models.TextChoices):
+        ANNOUNCEMENTS = "announcements", "Announcements"
+        WELCOME = "welcome", "Welcome"
+        MAIN = "main", "Main"
+        RANDOM = "random", "Random"
+        EVENTS = "events", "Events"
+        EVENT = "event", "Event"
+        CUSTOM = "custom", "Custom"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    club = models.ForeignKey(Club, on_delete=models.CASCADE, related_name="channels")
+    name = models.CharField(max_length=80)
+    slug = models.SlugField(max_length=80)
+    channel_type = models.CharField(
+        max_length=20, choices=ChannelType.choices, default=ChannelType.CUSTOM
+    )
+    is_private = models.BooleanField(default=False)
+    is_read_only = models.BooleanField(default=False)
+    is_archived = models.BooleanField(default=False)
+    event = models.OneToOneField(
+        Event,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="chat_channel",
+    )
+    created_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_channels",
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["club", "slug"], name="unique_club_channel_slug"
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.club.name} - {self.name}"
+
+
+class ClubChannelMember(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    channel = models.ForeignKey(
+        ClubChannel, on_delete=models.CASCADE, related_name="memberships"
+    )
+    user = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.CASCADE,
+        related_name="club_channel_memberships",
+    )
+    added_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="added_channel_memberships",
+    )
+    added_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["-added_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["channel", "user"], name="unique_club_channel_member"
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.channel} -> {self.user}"
+
+
+class ClubMessage(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    channel = models.ForeignKey(
+        ClubChannel, on_delete=models.CASCADE, related_name="messages"
+    )
+    author = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="club_messages",
+    )
+    text = models.TextField(max_length=2000)
+    is_system = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["created_at"]

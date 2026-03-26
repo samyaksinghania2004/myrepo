@@ -25,6 +25,7 @@ class User(AbstractUser):
     )
     email_verified_at = models.DateTimeField(blank=True, null=True)
     signup_reported_at = models.DateTimeField(blank=True, null=True)
+    last_seen_at = models.DateTimeField(blank=True, null=True, db_index=True)
 
     def clean(self) -> None:
         super().clean()

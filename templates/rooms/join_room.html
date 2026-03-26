@@ -1,24 +1,27 @@
 {% extends 'base.html' %}
 {% block title %}Join {{ room.name }} · ClubsHub{% endblock %}
 {% block content %}
-<div class="columns is-centered">
-    <div class="column is-half">
-        <div class="box">
-            <h1 class="title">Join {{ room.name }}</h1>
-            <p class="subtitle">Choose a handle that is unique within this room.</p>
-            <p><strong>Access:</strong> {{ room.get_access_type_display }}</p>
-            <form method="post">
-                {% csrf_token %}
-                {% for field in form %}
-                    <div class="field">
-                        <label class="label">{{ field.label }}</label>
-                        <div class="control">{{ field }}</div>
-                        {% for error in field.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
-                    </div>
-                {% endfor %}
-                <button class="button is-primary" type="submit">Continue</button>
-            </form>
+<div class="form-shell">
+    <div class="surface-card form-card">
+        <div class="surface-card__header">
+            <div>
+                <p class="eyebrow">Join open room</p>
+                <h1>{{ room.name }}</h1>
+            </div>
+            <span class="tag is-dark is-light">{{ room.get_access_type_display }}</span>
         </div>
+        <p class="muted-text">Pick a handle that is unique in this room. Private rooms require an invite before you can join.</p>
+        <form method="post" class="stack-gap">
+            {% csrf_token %}
+            {% for field in form %}
+                <div>
+                    <label class="label">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                </div>
+            {% endfor %}
+            <button class="button is-link" type="submit">Join room</button>
+        </form>
     </div>
 </div>
 {% endblock %}

@@ -1,27 +1,316 @@
 {% extends 'base.html' %}
-{% block title %}{{ club.name }}{% endblock %}
+{% block title %}{{ club.name }} - ClubsHub{% endblock %}
 {% block content %}
-<h1 class="title">{{ club.name }}</h1>
-<p>{{ club.description }}</p>
-{% if membership and membership.status == 'active' %}
-<form method="post" action="{% url 'clubs_events:club_leave' club.pk %}">{% csrf_token %}<button class="button">Leave Club</button></form>
-{% else %}
-<form method="post" action="{% url 'clubs_events:club_join' club.pk %}">{% csrf_token %}<button class="button is-primary">Join Club</button></form>
+<section class="page-hero page-hero--club">
+    <div>
+        <p class="eyebrow">{{ club.category }}</p>
+        <h1 class="page-title">{{ club.name }}</h1>
+        <p class="page-subtitle">{{ club.description }}</p>
+    </div>
+    <div class="hero-actions">
+        {% if membership and membership.status == 'active' %}
+            <span class="tag is-link is-light">You are {{ membership.get_local_role_display }}</span>
+        {% else %}
+            <form method="post" action="{% url 'clubs_events:club_join' club.pk %}">
+                {% csrf_token %}
+                <button class="button is-link" type="submit">Join club</button>
+            </form>
+        {% endif %}
+        {% if can_manage_club or can_create_event_for_club or can_create_channel or membership %}
+            <details class="action-menu">
+                <summary class="action-menu__toggle button is-dark is-outlined" aria-label="Club options">
+                    ...
+                </summary>
+                <div class="action-menu__panel">
+                    {% if can_manage_club %}
+                        <a class="action-menu__item" href="{% url 'clubs_events:club_edit' club.pk %}">Edit club</a>
+                    {% endif %}
+                    {% if can_create_event_for_club %}
+                        <a class="action-menu__item" href="{% url 'clubs_events:event_create' %}?club={{ club.pk }}">New event</a>
+                    {% endif %}
+                    {% if can_create_channel %}
+                        <a class="action-menu__item" href="{% url 'clubs_events:club_channel_create' club.pk %}">New channel</a>
+                    {% endif %}
+                    {% if membership and membership.status == 'active' %}
+                        <form method="post" action="{% url 'clubs_events:club_leave' club.pk %}" data-confirm="Leave {{ club.name }}?">
+                            {% csrf_token %}
+                            <button class="action-menu__item is-danger" type="submit">Leave club</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </details>
+        {% endif %}
+    </div>
+</section>
+
+<div class="club-chat-layout">
+    <section
+        class="surface-card club-chat-panel"
+        data-live-chat="club"
+        data-messages-url="{% url 'clubs_events:club_channel_messages' club.pk active_channel.slug %}"
+        data-send-url="{% url 'clubs_events:club_channel_send' club.pk active_channel.slug %}"
+        data-chat-last="{% if last_message_at %}{{ last_message_at|date:'c' }}{% endif %}"
+    >
+        <div class="club-chat-header">
+            <div>
+                <p class="eyebrow">Channel</p>
+                <h2>#{{ active_channel.name }}</h2>
+                {% if active_channel.channel_type == 'event' and active_channel.event %}
+                    <p class="muted-text">Event channel - <a href="{% url 'clubs_events:event_detail' active_channel.event.pk %}">View event</a></p>
+                {% endif %}
+                {% if active_channel.is_private %}
+                    <p class="muted-text">Private channel for club members.</p>
+                {% endif %}
+            </div>
+            {% if show_channel_menu %}
+                <details class="action-menu">
+                    <summary class="action-menu__toggle button is-dark is-outlined" aria-label="Channel options">
+                        ...
+                    </summary>
+                    <div class="action-menu__panel">
+                        {% if can_view_private_members %}
+                            <button class="action-menu__item" type="button" data-modal-target="channel-members-modal">
+                                View channel members
+                            </button>
+                        {% endif %}
+                        {% if can_add_private_members %}
+                            <button
+                                class="action-menu__item"
+                                type="button"
+                                data-modal-target="channel-members-modal"
+                                data-modal-focus="id_identifier"
+                            >
+                                Add members
+                            </button>
+                        {% endif %}
+                        <form method="post" action="{% url 'clubs_events:club_channel_delete' club.pk active_channel.slug %}" data-confirm="Delete #{{ active_channel.name }}?">
+                            {% csrf_token %}
+                            <button class="action-menu__item is-danger" type="submit">Delete channel</button>
+                        </form>
+                    </div>
+                </details>
+            {% endif %}
+            {% if not is_member %}
+                <div class="club-chat-cta">
+                    <p class="muted-text">Join the club to send messages. You can keep reading for now.</p>
+                    <form method="post" action="{% url 'clubs_events:club_join' club.pk %}">
+                        {% csrf_token %}
+                        <button class="button is-link is-light" type="submit">Join club to discuss</button>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="message-stream">
+            {% for message_obj in messages_qs %}
+                <article class="chat-message {% if message_obj.is_system %}chat-message--system{% endif %}" data-message-id="{{ message_obj.pk }}">
+                    <div class="chat-message__header">
+                        <div>
+                            <strong>{% if message_obj.author %}{{ message_obj.author.display_name }}{% else %}System{% endif %}</strong>
+                            <span class="muted-text">- {{ message_obj.created_at }}</span>
+                            {% if message_obj.is_system %}<span class="tag is-dark is-light">system</span>{% endif %}
+                        </div>
+                    </div>
+                    <div class="chat-message__body">
+                        {{ message_obj.text|linebreaksbr }}
+                    </div>
+                </article>
+            {% empty %}
+                <div class="empty-state compact-empty">
+                    <p>No messages yet. Start the conversation.</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if can_post_messages %}
+            <div class="composer-card composer-card--sticky">
+                <form method="post" class="composer-form">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="composer-field">
+                            {{ field }}
+                            {% for error in field.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                        </div>
+                    {% endfor %}
+                    <button class="button is-link" type="submit">Send</button>
+                </form>
+            </div>
+        {% elif is_member %}
+            <div class="flash-card flash-info">
+                This channel is read-only.
+            </div>
+        {% endif %}
+    </section>
+
+    <aside class="surface-card club-channel-panel">
+        <div class="surface-card__header">
+            <h2>Channels</h2>
+        </div>
+        <div class="channel-group">
+            <p class="eyebrow">Club</p>
+            <ul class="channel-list">
+                {% for channel in core_channels %}
+                    <li>
+                        <a class="channel-link {% if channel.slug == active_channel.slug %}is-active{% endif %}" href="{% url 'clubs_events:club_channel' club.pk channel.slug %}">
+                            <span>#{{ channel.name }}</span>
+                            <span class="channel-meta">
+                                {% if channel.is_private %}<span class="tag is-dark is-light">private</span>{% endif %}
+                                {% if channel.is_read_only %}<span class="tag is-dark is-light">read only</span>{% endif %}
+                            </span>
+                        </a>
+                    </li>
+                {% empty %}
+                    <li class="muted-text">No channels yet.</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="channel-group">
+            <p class="eyebrow">Events</p>
+            <ul class="channel-list">
+                {% for channel in event_channels %}
+                    <li>
+                        <a class="channel-link {% if channel.slug == active_channel.slug %}is-active{% endif %}" href="{% url 'clubs_events:club_channel' club.pk channel.slug %}">
+                            <span>#{{ channel.name }}</span>
+                            <span class="channel-meta">
+                                {% if channel.event %}<span class="tag is-link is-light">event</span>{% endif %}
+                            </span>
+                        </a>
+                    </li>
+                {% empty %}
+                    <li class="muted-text">No event channels yet.</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% if show_members %}
+        <div class="channel-group">
+            <div class="member-group-header">
+                <p class="eyebrow">Members</p>
+                <span class="tag is-link is-light">{{ online_members|length }} online</span>
+            </div>
+            <div class="member-list">
+                {% if online_members %}
+                    <p class="member-group-label">Online</p>
+                    {% for m in online_members %}
+                        <div class="member-row">
+                            <div class="member-identity">
+                                <span class="presence-dot is-online" aria-hidden="true"></span>
+                                <div>
+                                    <strong>{{ m.user.display_name }}</strong>
+                                    <p class="muted-text">{{ m.user.email }}</p>
+                                </div>
+                            </div>
+                            <div class="member-actions">
+                                <span class="tag is-link is-light">{{ m.get_local_role_display }}</span>
+                                {% if can_manage_members and m.user_id != request.user.id %}
+                                    <details class="action-menu action-menu--compact">
+                                        <summary class="action-menu__toggle button is-dark is-outlined" aria-label="Member options">
+                                            ...
+                                        </summary>
+                                        <div class="action-menu__panel">
+                                            {% if m.local_role == 'member' %}
+                                                <a class="action-menu__item" href="{% url 'clubs_events:assign_secretary' club.pk m.user_id %}">Make secretary</a>
+                                            {% endif %}
+                                            {% if m.local_role == 'secretary' %}
+                                                <a class="action-menu__item" href="{% url 'clubs_events:revoke_secretary' club.pk m.user_id %}">Revoke secretary</a>
+                                            {% endif %}
+                                            <form method="post" action="{% url 'clubs_events:club_member_remove' club.pk m.user_id %}" data-confirm="Remove {{ m.user.display_name }} from {{ club.name }}?">
+                                                {% csrf_token %}
+                                                <button class="action-menu__item is-danger" type="submit">Remove from club</button>
+                                            </form>
+                                        </div>
+                                    </details>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                {% if offline_members %}
+                    <p class="member-group-label">Offline</p>
+                    {% for m in offline_members %}
+                        <div class="member-row">
+                            <div class="member-identity">
+                                <span class="presence-dot is-offline" aria-hidden="true"></span>
+                                <div>
+                                    <strong>{{ m.user.display_name }}</strong>
+                                    <p class="muted-text">{{ m.user.email }}</p>
+                                </div>
+                            </div>
+                            <div class="member-actions">
+                                <span class="tag is-link is-light">{{ m.get_local_role_display }}</span>
+                                {% if can_manage_members and m.user_id != request.user.id %}
+                                    <details class="action-menu action-menu--compact">
+                                        <summary class="action-menu__toggle button is-dark is-outlined" aria-label="Member options">
+                                            ...
+                                        </summary>
+                                        <div class="action-menu__panel">
+                                            {% if m.local_role == 'member' %}
+                                                <a class="action-menu__item" href="{% url 'clubs_events:assign_secretary' club.pk m.user_id %}">Make secretary</a>
+                                            {% endif %}
+                                            {% if m.local_role == 'secretary' %}
+                                                <a class="action-menu__item" href="{% url 'clubs_events:revoke_secretary' club.pk m.user_id %}">Revoke secretary</a>
+                                            {% endif %}
+                                            <form method="post" action="{% url 'clubs_events:club_member_remove' club.pk m.user_id %}" data-confirm="Remove {{ m.user.display_name }} from {{ club.name }}?">
+                                                {% csrf_token %}
+                                                <button class="action-menu__item is-danger" type="submit">Remove from club</button>
+                                            </form>
+                                        </div>
+                                    </details>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                {% if not online_members and not offline_members %}
+                    <p class="muted-text">No members yet.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </aside>
+</div>
+{% if can_view_private_members %}
+<div class="modal is-hidden" id="channel-members-modal" data-modal>
+    <div class="modal__backdrop" data-modal-close></div>
+    <div class="modal__panel">
+        <div class="modal__header">
+            <div>
+                <p class="eyebrow">Private channel</p>
+                <h3>Channel members</h3>
+            </div>
+            <button type="button" class="modal__close button is-dark is-outlined" data-modal-close>
+                Close
+            </button>
+        </div>
+        <div class="modal__body stack-gap">
+            {% if can_add_private_members %}
+            <form method="post" action="{% url 'clubs_events:club_channel_add_member' club.pk active_channel.slug %}" class="stack-gap">
+                {% csrf_token %}
+                {{ channel_member_form.identifier }}
+                <button class="button is-link is-light" type="submit">Add member</button>
+            </form>
+            {% endif %}
+            <div class="member-list">
+                {% for access in channel_members %}
+                    <div class="member-row">
+                        <div>
+                            <strong>{{ access.user.display_name }}</strong>
+                            <p class="muted-text">{{ access.user.email }}</p>
+                        </div>
+                        {% if can_add_private_members %}
+                            <div class="member-actions">
+                                <form method="post" action="{% url 'clubs_events:club_channel_remove_member' club.pk active_channel.slug access.user_id %}" data-confirm="Remove {{ access.user.display_name }} from #{{ active_channel.name }}?">
+                                    {% csrf_token %}
+                                    <button class="button is-small is-danger is-light" type="submit">Remove</button>
+                                </form>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <p class="muted-text">No members added yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
 {% endif %}
-
-<h2 class="subtitle mt-4">Members</h2>
-<ul>
-{% for m in members %}
-<li>{{ m.user.display_name }} - {{ m.get_local_role_display }}
-{% if can_manage_club and m.local_role == 'member' %}<a href="{% url 'clubs_events:assign_secretary' club.pk m.user_id %}">Assign secretary</a>{% endif %}
-{% if can_manage_club and m.local_role == 'secretary' %}<a href="{% url 'clubs_events:revoke_secretary' club.pk m.user_id %}">Revoke secretary</a>{% endif %}
-</li>
-{% endfor %}
-</ul>
-
-<h2 class="subtitle mt-4">Announcements</h2>
-{% if can_post_announcement %}<a class="button is-link is-small" href="{% url 'clubs_events:announcement_create' 'club' club.pk %}">Post announcement</a>{% endif %}
-{% for ann in announcements %}
-<div class="box"><strong>{{ ann.title }}</strong><p>{{ ann.body }}</p></div>
-{% empty %}<p>No announcements yet.</p>{% endfor %}
 {% endblock %}

@@ -71,6 +71,8 @@ def can_manage_event(user, event) -> bool:
 def can_create_room(user, club=None, event=None) -> bool:
     if is_global_admin(user):
         return True
+    if club is None and event is None:
+        return bool(user and user.is_authenticated)
     target_club = club or (event.club if event else None)
     if target_club is None:
         return False

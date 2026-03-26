@@ -1,38 +1,43 @@
 {% extends 'base.html' %}
 {% block title %}Notifications · ClubsHub{% endblock %}
 {% block content %}
-<div class="level">
-    <div class="level-left">
-        <h1 class="title">Notifications</h1>
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">Notifications</p>
+        <h1 class="page-title">Notifications</h1>
+        <p class="page-subtitle">Announcements, invites, moderation outcomes and event updates all show up here.</p>
     </div>
-    <div class="level-right">
-        <form method="post">
-            {% csrf_token %}
-            <button class="button is-light" type="submit">Mark all as read</button>
-        </form>
-    </div>
-</div>
-{% if notifications %}
+    <form method="post">
+        {% csrf_token %}
+        <button class="button is-dark is-outlined" type="submit">Mark all as read</button>
+    </form>
+</section>
+
+<section class="stack-gap">
     {% for notification in notifications %}
-        <div class="box {% if not notification.is_read %}has-background-light{% endif %}">
-            <div class="level mb-2">
-                <div class="level-left">
-                    <p class="has-text-weight-semibold">{{ notification.get_notification_type_display }}</p>
-                </div>
-                <div class="level-right">
-                    <span class="tag {% if notification.is_read %}is-light{% else %}is-primary{% endif %}">
-                        {{ notification.is_read|yesno:"Read,Unread" }}
-                    </span>
-                </div>
+        <article class="notification-card {% if not notification.is_read %}is-unread{% endif %}">
+            <div class="notification-card__meta">
+                <span class="tag is-dark is-light">{{ notification.get_notification_type_display }}</span>
+                <span class="muted-text">{{ notification.created_at }}</span>
             </div>
-            <p>{{ notification.text }}</p>
-            <p class="is-size-7 has-text-grey mt-2">{{ notification.created_at }}</p>
-            {% if not notification.is_read %}
-                <a class="button is-small is-link is-light mt-3" href="{% url 'core:mark_notification_read' notification.pk %}">Mark as read</a>
-            {% endif %}
+            <div class="notification-card__body">
+                <h2>{{ notification.text }}</h2>
+                {% if notification.body %}
+                    <p>{{ notification.body|linebreaksbr }}</p>
+                {% endif %}
+            </div>
+            <div class="notification-card__actions">
+                <a class="button is-link" href="{% url 'core:open_notification' notification.pk %}">Open</a>
+                {% if not notification.is_read %}
+                    <a class="button is-dark is-outlined" href="{% url 'core:mark_notification_read' notification.pk %}">Mark read</a>
+                {% endif %}
+            </div>
+        </article>
+    {% empty %}
+        <div class="empty-state">
+            <h2>No notifications yet</h2>
+            <p>When your clubs post announcements or open rooms send invites, they will appear here.</p>
         </div>
     {% endfor %}
-{% else %}
-    <div class="notification is-light">No notifications yet.</div>
-{% endif %}
+</section>
 {% endblock %}

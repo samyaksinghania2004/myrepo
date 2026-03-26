@@ -1,23 +1,26 @@
 {% extends 'base.html' %}
-{% block title %}{{ mode }} Room · ClubsHub{% endblock %}
+{% block title %}{{ mode }} Open Room - ClubsHub{% endblock %}
 {% block content %}
-<div class="columns is-centered">
-    <div class="column is-two-thirds">
-        <div class="box">
-            <h1 class="title">{{ mode }} discussion room</h1>
-            <form method="post">
-                {% csrf_token %}
-                {{ form.non_field_errors }}
-                {% for field in form %}
-                    <div class="field">
-                        <label class="label">{{ field.label }}</label>
-                        <div class="control">{{ field }}</div>
-                        {% for error in field.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
-                    </div>
-                {% endfor %}
-                <button class="button is-primary" type="submit">Save room</button>
-            </form>
+<div class="form-shell">
+    <div class="surface-card form-card">
+        <div class="surface-card__header">
+            <div>
+                <p class="eyebrow">Open rooms</p>
+                <h1>{{ mode }} open room</h1>
+            </div>
         </div>
+        <form method="post" class="stack-gap">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {% for field in form %}
+                <div>
+                    <label class="label">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                </div>
+            {% endfor %}
+            <button class="button is-link" type="submit">Save room</button>
+        </form>
     </div>
 </div>
 {% endblock %}

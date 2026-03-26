@@ -1,52 +1,61 @@
 {% extends 'base.html' %}
 {% block title %}Moderation Dashboard · ClubsHub{% endblock %}
 {% block content %}
-<h1 class="title">Moderation dashboard</h1>
-<div class="box">
-    <form method="get">
-        <div class="columns">
-            <div class="column is-3">
-                <label class="label">Status</label>
-                <div class="select is-fullwidth">
-                    <select name="status">
-                        {% for key, value in status_choices %}
-                            <option value="{{ key }}" {% if status == key %}selected{% endif %}>{{ value }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-            <div class="column is-4">
-                <label class="label">Room</label>
-                <div class="select is-fullwidth">
-                    <select name="room">
-                        <option value="">All rooms</option>
-                        {% for room in rooms %}
-                            <option value="{{ room.pk }}" {% if room_id == room.id|stringformat:'s' %}selected{% endif %}>{{ room.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-            <div class="column is-2 is-flex is-align-items-flex-end">
-                <button class="button is-link is-fullwidth" type="submit">Apply</button>
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">Admin tools</p>
+        <h1 class="page-title">Reports dashboard</h1>
+        <p class="page-subtitle">Review room reports with direct context and action tracking.</p>
+    </div>
+</section>
+
+<section class="panel-card">
+    <form method="get" class="filter-grid filter-grid--compact">
+        <div>
+            <label class="label">Status</label>
+            <div class="select is-fullwidth">
+                <select name="status">
+                    <option value="">All statuses</option>
+                    {% for key, value in status_choices %}
+                        <option value="{{ key }}" {% if status == key %}selected{% endif %}>{{ value }}</option>
+                    {% endfor %}
+                </select>
             </div>
         </div>
+        <div>
+            <label class="label">Room</label>
+            <div class="select is-fullwidth">
+                <select name="room">
+                    <option value="">All rooms</option>
+                    {% for room in rooms %}
+                        <option value="{{ room.pk }}" {% if room_id == room.id|stringformat:'s' or room_id == room.pk|stringformat:'s' %}selected{% endif %}>{{ room.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="filter-actions">
+            <button class="button is-link is-fullwidth" type="submit">Filter</button>
+        </div>
     </form>
+</section>
+
+<div class="table-wrap surface-card">
+    <table class="table is-fullwidth is-hoverable">
+        <thead><tr><th>Room</th><th>Sender</th><th>Reporter</th><th>Reason</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+        {% for report in reports %}
+            <tr>
+                <td>{{ report.message.room.name }}</td>
+                <td>{{ report.message.handle.user.display_name }}</td>
+                <td>{{ report.reporter.display_name }}</td>
+                <td>{{ report.reason|default:'—' }}</td>
+                <td><span class="tag is-dark is-light">{{ report.get_status_display }}</span></td>
+                <td><a class="button is-small is-link" href="{% url 'rooms:moderate_report' report.pk %}">Open review</a></td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="6">No reports found.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
 </div>
-<table class="table is-fullwidth is-hoverable">
-    <thead><tr><th>Room</th><th>Handle</th><th>Reporter</th><th>Reason</th><th>Status</th><th></th></tr></thead>
-    <tbody>
-    {% for report in reports %}
-        <tr>
-            <td>{{ report.message.room.name }}</td>
-            <td>{{ report.message.handle.handle_name }}</td>
-            <td>{{ report.reporter.display_name }}</td>
-            <td>{{ report.reason|default:'—' }}</td>
-            <td>{{ report.get_status_display }}</td>
-            <td><a class="button is-small is-link is-light" href="{% url 'rooms:moderate_report' report.pk %}">Open</a></td>
-        </tr>
-    {% empty %}
-        <tr><td colspan="6">No reports found.</td></tr>
-    {% endfor %}
-    </tbody>
-</table>
 {% endblock %}

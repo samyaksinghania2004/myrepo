@@ -1,47 +1,80 @@
 {% extends 'base.html' %}
-{% block title %}Moderate Report · ClubsHub{% endblock %}
+{% block title %}Review Report · ClubsHub{% endblock %}
 {% block content %}
-<div class="columns">
-    <div class="column is-three-fifths">
-        <div class="box">
-            <h1 class="title">Moderate report</h1>
-            <p><strong>Room:</strong> {{ report.message.room.name }}</p>
-            <p><strong>Reporter:</strong> {{ report.reporter.display_name }}</p>
-            <p><strong>Reported handle:</strong> {{ report.message.handle.handle_name }}</p>
-            <p><strong>Reason:</strong> {{ report.reason|default:'No reason supplied.' }}</p>
-            <article class="message is-light mt-4">
-                <div class="message-header"><p>Reported message</p></div>
-                <div class="message-body">{{ report.message.text }}</div>
-            </article>
-            <h2 class="title is-5 mt-5">Message context</h2>
-            {% for item in surrounding_messages %}
-                <div class="box p-3">
-                    <p><strong>{{ item.handle.handle_name }}</strong> <span class="is-size-7 has-text-grey">{{ item.created_at }}</span></p>
-                    <p class="mt-2">{% if item.is_deleted %}<span class="muted-message">Deleted message.</span>{% else %}{{ item.text }}{% endif %}</p>
-                </div>
-            {% endfor %}
-            {% if revealed_user %}
-                <div class="notification is-warning">
-                    Identity already revealed: <strong>{{ revealed_user.display_name }}</strong> ({{ revealed_user.email }})
-                </div>
-            {% endif %}
-        </div>
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">Report review</p>
+        <h1 class="page-title">Moderate report</h1>
+        <p class="page-subtitle">Jump into the actual conversation with the reported message highlighted before you decide.</p>
     </div>
-    <div class="column">
-        <div class="box">
-            <h2 class="title is-5">Take action</h2>
-            <form method="post">
+    <a class="button is-link" href="{{ jump_url }}">Open room context</a>
+</section>
+
+<div class="dashboard-grid">
+    <section class="stack-gap">
+        <article class="surface-card">
+            <div class="surface-card__header">
+                <h2>Reported message</h2>
+                <span class="tag is-dark is-light">{{ report.get_status_display }}</span>
+            </div>
+            <div class="meta-row">
+                <span>Room: {{ room.name }}</span>
+                <span>Reporter: {{ report.reporter.display_name }}</span>
+                <span>Sender: {{ report.message.handle.user.display_name }} ({{ report.message.handle.user.email }})</span>
+            </div>
+            <div class="highlight-message-block">
+                <strong>{{ report.message.handle.handle_name }}</strong>
+                <p>{{ report.message.text }}</p>
+            </div>
+            <p><strong>Reason supplied:</strong> {{ report.reason|default:'—' }}</p>
+        </article>
+
+        <article class="surface-card">
+            <div class="surface-card__header"><h2>Room context</h2></div>
+            {% for item in surrounding_messages %}
+                <article class="chat-message {% if item.pk == report.message.pk %}is-focused{% endif %}">
+                    <div class="chat-message__header">
+                        <div>
+                            <strong>{{ item.handle.handle_name }}</strong>
+                            <span class="muted-text">· {{ item.handle.user.display_name }}</span>
+                            <span class="muted-text">· {{ item.created_at }}</span>
+                        </div>
+                    </div>
+                    <div class="chat-message__body">
+                        {% if item.is_deleted %}<span class="muted-message">Deleted message.</span>{% else %}{{ item.text|linebreaksbr }}{% endif %}
+                    </div>
+                </article>
+            {% empty %}
+                <p class="muted-text">No surrounding context found.</p>
+            {% endfor %}
+        </article>
+    </section>
+
+    <aside class="stack-gap">
+        <article class="surface-card compact-card">
+            <div class="surface-card__header"><h2>People involved</h2></div>
+            <ul class="simple-list">
+                {% for participant in participants %}
+                    <li>{{ participant.user.display_name }} <span class="muted-text">({{ participant.handle_name }})</span></li>
+                {% empty %}
+                    <li class="muted-text">No participants detected.</li>
+                {% endfor %}
+            </ul>
+        </article>
+        <article class="surface-card compact-card">
+            <div class="surface-card__header"><h2>Take action</h2></div>
+            <form method="post" class="stack-gap">
                 {% csrf_token %}
                 {% for field in form %}
-                    <div class="field">
+                    <div>
                         <label class="label">{{ field.label }}</label>
-                        <div class="control">{{ field }}</div>
+                        {{ field }}
                         {% for error in field.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
                     </div>
                 {% endfor %}
-                <button class="button is-danger" type="submit">Apply action</button>
+                <button class="button is-link" type="submit">Save decision</button>
             </form>
-        </div>
-    </div>
+        </article>
+    </aside>
 </div>
 {% endblock %}

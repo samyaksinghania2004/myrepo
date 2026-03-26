@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% block title %}Inbox - ClubsHub{% endblock %}
+{% block content %}
+<section class="page-hero page-hero--dm">
+    <div>
+        <p class="eyebrow">Inbox</p>
+        <h1 class="page-title">Direct messages</h1>
+        <p class="page-subtitle">Start private conversations and keep your chats organized.</p>
+    </div>
+</section>
+
+<div class="dm-layout">
+    <aside class="surface-card dm-list-panel">
+        <div class="dm-list-header">
+            <div>
+                <h2>Messages</h2>
+                <p class="muted-text">Start a new chat or pick a thread.</p>
+            </div>
+            <span class="tag is-dark is-light">Inbox</span>
+        </div>
+        <form method="post" action="{% url 'core:inbox' %}" class="dm-start">
+            {% csrf_token %}
+            <div class="dm-start__field">
+                {{ start_form.identifier }}
+                {% for error in start_form.errors.values %}
+                    {% for message in error %}<p class="help is-danger">{{ message }}</p>{% endfor %}
+                {% endfor %}
+            </div>
+            <button class="button is-link" type="submit">Start chat</button>
+        </form>
+        <div class="dm-thread-list">
+            {% for thread in threads %}
+                <a class="dm-thread {% if active_thread and thread.pk == active_thread.pk %}is-active{% endif %}" href="{% url 'core:inbox_thread' thread.pk %}">
+                    <div class="dm-avatar">
+                        {{ thread.other_user.display_name|default:"?"|slice:":1"|upper }}
+                    </div>
+                    <div class="dm-thread__meta">
+                        <strong>{{ thread.other_user.display_name|default:"Unknown user" }}</strong>
+                        <span class="dm-thread__preview">
+                            {% if thread.last_message_body %}
+                                {{ thread.last_message_body|truncatechars:60 }}
+                            {% else %}
+                                No messages yet.
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="dm-thread__side">
+                        {% if thread.last_message_at %}<span class="dm-thread__time">{{ thread.last_message_at|date:"M j, g:i a" }}</span>{% endif %}
+                        {% if thread.is_unread %}<span class="dm-thread__badge" aria-label="Unread message"></span>{% endif %}
+                    </div>
+                </a>
+            {% empty %}
+                <p class="muted-text">No conversations yet.</p>
+            {% endfor %}
+        </div>
+    </aside>
+
+    <section
+        class="surface-card dm-chat-panel"
+        {% if active_thread %}
+            data-dm-thread="{{ active_thread.pk }}"
+            data-dm-messages-url="{% url 'core:inbox_messages' active_thread.pk %}"
+            data-dm-send-url="{% url 'core:inbox_send' active_thread.pk %}"
+            data-dm-last="{% if last_message_at %}{{ last_message_at|date:'c' }}{% endif %}"
+        {% endif %}
+    >
+        {% if active_thread %}
+            <div class="dm-chat-header">
+                <div class="dm-chat-identity">
+                    <div class="dm-avatar is-large">
+                        {{ other_user.display_name|default:"?"|slice:":1"|upper }}
+                    </div>
+                    <div>
+                        <p class="eyebrow">Chatting with</p>
+                        <h2>{{ other_user.display_name|default:"Unknown user" }}</h2>
+                        {% if other_user %}<p class="muted-text">{{ other_user.email }}</p>{% endif %}
+                    </div>
+                </div>
+                <div class="dm-chat-actions">
+                    <span class="tag is-dark is-light">Direct message</span>
+                    {% if other_user %}
+                        <details class="action-menu">
+                            <summary class="action-menu__toggle button is-dark is-outlined" aria-label="Chat options">
+                                ...
+                            </summary>
+                            <div class="action-menu__panel">
+                                {% if blocked_by_me %}
+                                    <form method="post" action="{% url 'core:inbox_block' active_thread.pk 'unblock' %}" data-confirm="Unblock {{ other_user.display_name }}?">
+                                        {% csrf_token %}
+                                        <button class="action-menu__item" type="submit">Unblock</button>
+                                    </form>
+                                {% else %}
+                                    <form method="post" action="{% url 'core:inbox_block' active_thread.pk 'block' %}" data-confirm="Block {{ other_user.display_name }}?">
+                                        {% csrf_token %}
+                                        <button class="action-menu__item is-danger" type="submit">Block</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </details>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="message-stream dm-message-stream">
+                {% for message in dm_messages %}
+                    <article class="chat-message dm-bubble {% if message.sender_id == request.user.id %}chat-message--me{% endif %}" data-message-id="{{ message.pk }}">
+                        <div class="chat-message__header">
+                            <div>
+                                <strong>{% if message.sender_id == request.user.id %}You{% else %}{{ message.sender.display_name }}{% endif %}</strong>
+                                <span class="muted-text">- {{ message.created_at }}</span>
+                            </div>
+                        </div>
+                        <div class="chat-message__body">
+                            {{ message.body|linebreaksbr }}
+                        </div>
+                    </article>
+                {% empty %}
+                    <div class="empty-state compact-empty">
+                        <p>No messages yet. Start the conversation.</p>
+                    </div>
+                {% endfor %}
+            </div>
+
+            {% if can_send %}
+                <div class="composer-card composer-card--sticky dm-composer">
+                    <form method="post" class="composer-form">
+                        {% csrf_token %}
+                        <div class="composer-field">
+                            {{ message_form.body }}
+                            {% for error in message_form.body.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                        </div>
+                        <button class="button is-link" type="submit">Send</button>
+                    </form>
+                </div>
+            {% else %}
+                <div class="flash-card flash-info">
+                    {% if blocked_me %}
+                        You cannot send messages because this user has blocked you.
+                    {% else %}
+                        You blocked this user. Unblock to send messages.
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="empty-state">
+                <h2>Select a conversation</h2>
+                <p>Pick a chat from the list or start a new one.</p>
+            </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

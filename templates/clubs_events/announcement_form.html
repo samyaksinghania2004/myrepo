@@ -1,12 +1,15 @@
 {% extends 'base.html' %}
-{% block title %}{{ mode }} Event · ClubsHub{% endblock %}
+{% block title %}New Announcement · ClubsHub{% endblock %}
 {% block content %}
 <div class="form-shell">
     <div class="surface-card form-card">
         <div class="surface-card__header">
             <div>
-                <p class="eyebrow">Event management</p>
-                <h1>{{ mode }} event</h1>
+                <p class="eyebrow">Announcement</p>
+                <h1>
+                    Post to
+                    {% if club %}{{ club.name }}{% elif event %}{{ event.title }}{% elif room %}{{ room.name }}{% endif %}
+                </h1>
             </div>
         </div>
         <form method="post" class="stack-gap">
@@ -16,11 +19,10 @@
                 <div>
                     <label class="label">{{ field.label }}</label>
                     {{ field }}
-                    {% if field.help_text %}<p class="help">{{ field.help_text }}</p>{% endif %}
                     {% for error in field.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
                 </div>
             {% endfor %}
-            <button class="button is-link" type="submit">Save event</button>
+            <button class="button is-link" type="submit">Publish announcement</button>
         </form>
     </div>
 </div>
