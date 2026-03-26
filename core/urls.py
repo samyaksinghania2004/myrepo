@@ -6,6 +6,7 @@ app_name = "core"
 
 urlpatterns = [
     path("", views.root_redirect, name="root"),
+    path("offline/", views.offline_view, name="offline"),
     path("notifications/", views.notifications_list_view, name="notifications"),
     path("notifications/feed/", views.notifications_feed_view, name="notifications_feed"),
     path(

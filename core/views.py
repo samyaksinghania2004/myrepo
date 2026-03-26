@@ -9,6 +9,7 @@ from django.db import models
 from django.db.models import OuterRef, Subquery
 from django.http import HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.templatetags.static import static
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -33,6 +34,56 @@ def root_redirect(request):
     if request.user.is_authenticated:
         return redirect("clubs_events:event_feed")
     return redirect("accounts:login")
+
+
+def web_manifest_view(request):
+    response = JsonResponse(
+        {
+            "name": "ClubsHub",
+            "short_name": "ClubsHub",
+            "description": "Clubs, events, rooms, notifications, and inbox for IIT Kanpur communities.",
+            "id": "/",
+            "start_url": reverse("core:root"),
+            "scope": "/",
+            "display": "standalone",
+            "background_color": "#08111f",
+            "theme_color": "#0b1324",
+            "orientation": "portrait",
+            "icons": [
+                {
+                    "src": static("icons/icon-192.png"),
+                    "sizes": "192x192",
+                    "type": "image/png",
+                    "purpose": "any",
+                },
+                {
+                    "src": static("icons/icon-512.png"),
+                    "sizes": "512x512",
+                    "type": "image/png",
+                    "purpose": "any",
+                },
+                {
+                    "src": static("icons/icon-maskable-512.png"),
+                    "sizes": "512x512",
+                    "type": "image/png",
+                    "purpose": "maskable",
+                },
+            ],
+        }
+    )
+    response["Content-Type"] = "application/manifest+json"
+    response["Cache-Control"] = "no-cache"
+    return response
+
+
+def service_worker_view(request):
+    response = render(request, "core/service_worker.js", content_type="application/javascript")
+    response["Cache-Control"] = "no-cache"
+    return response
+
+
+def offline_view(request):
+    return render(request, "core/offline.html")
 
 
 @login_required

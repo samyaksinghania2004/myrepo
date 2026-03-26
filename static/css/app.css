@@ -1115,6 +1115,31 @@ body.modal-open {
   color: var(--muted);
 }
 
+.app-install-button {
+  position: fixed;
+  right: 1rem;
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  z-index: 41;
+  min-height: 3rem;
+  padding-inline: 1rem !important;
+  border-radius: 999px !important;
+  box-shadow: 0 16px 34px rgba(47, 116, 255, 0.24);
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.app-install-button.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.app-install-button[hidden] {
+  display: none !important;
+}
+
 .muted-message {
   opacity: 0.75;
   font-style: italic;
@@ -1502,6 +1527,11 @@ body.modal-open {
   .dm-thread__time {
     color: var(--primary-strong);
   }
+
+  .app-install-button {
+    right: 0.85rem;
+    bottom: calc(0.85rem + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 @media (max-width: 640px) {
@@ -1533,5 +1563,15 @@ body.modal-open {
   .app-topbar-button--theme {
     width: 2.85rem;
     min-width: 2.85rem;
+  }
+}
+
+@media (display-mode: standalone) {
+  .app-topbar {
+    padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+  }
+
+  .app-install-button {
+    display: none !important;
   }
 }

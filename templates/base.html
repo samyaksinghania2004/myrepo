@@ -5,11 +5,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}ClubsHub{% endblock %}</title>
+    <meta name="theme-color" content="#0b1324">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ClubsHub">
+    <link rel="manifest" href="{% url 'web_manifest' %}">
+    <link rel="icon" type="image/png" sizes="64x64" href="{% static 'icons/favicon-64.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'icons/apple-touch-icon.png' %}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
     <link rel="stylesheet" href="{% static 'css/app.css' %}">
     <script>
         window.clubshubNotificationFeedUrl = "{% url 'core:notifications_feed' %}";
         window.clubshubUserSearchUrl = "{% url 'core:user_search' %}";
+        window.clubshubServiceWorkerUrl = "{% url 'service_worker' %}";
     </script>
     <script src="{% static 'js/app.js' %}" defer></script>
 </head>
@@ -101,6 +109,9 @@
     </div>
 </div>
 <div id="toast-root" class="toast-root"></div>
+<button type="button" class="button is-link app-install-button" data-install-app hidden>
+    Install app
+</button>
 <div class="modal is-hidden" id="confirm-modal" data-modal data-confirm-modal>
     <div class="modal__backdrop" data-modal-close></div>
     <div class="modal__panel">

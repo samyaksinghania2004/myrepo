@@ -8,11 +8,14 @@
   const themeToggle = document.querySelector('[data-theme-toggle]');
   const themeIcon = document.querySelector('[data-theme-icon]');
   const notificationsButton = document.querySelector('[data-notifications-button]');
+  const installButton = document.querySelector('[data-install-app]');
   const enableAlertsButton = document.querySelector('[data-enable-browser-notifications]');
   const toastRoot = document.getElementById('toast-root');
   const themeKey = 'clubshub-theme';
   const sidebarStateKey = 'clubshub-sidebar-collapsed';
   const seenNotificationsKey = 'clubshub-seen-notification-ids';
+  const liveMessagePollIntervalMs = 4000;
+  let deferredInstallPrompt = null;
 
   const showToast = (title, body) => {
     if (!toastRoot) return;
@@ -21,6 +24,12 @@
     toast.innerHTML = `<h4>${title}</h4><p>${body || ''}</p>`;
     toastRoot.appendChild(toast);
     window.setTimeout(() => toast.remove(), 5500);
+  };
+
+  const setInstallButtonVisibility = (visible) => {
+    if (!installButton) return;
+    installButton.hidden = !visible;
+    installButton.classList.toggle('is-visible', visible);
   };
 
   const getCookie = (name) => {
@@ -159,6 +168,42 @@
     });
   }
 
+  if ('serviceWorker' in navigator && window.clubshubServiceWorkerUrl) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register(window.clubshubServiceWorkerUrl).catch((error) => {
+        console.debug('Service worker registration failed', error);
+      });
+    });
+  }
+
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    setInstallButtonVisibility(true);
+  });
+
+  if (installButton) {
+    installButton.addEventListener('click', async () => {
+      if (!deferredInstallPrompt) {
+        showToast('Install ClubsHub', 'Use your browser menu to add ClubsHub to the home screen.');
+        return;
+      }
+      deferredInstallPrompt.prompt();
+      try {
+        await deferredInstallPrompt.userChoice;
+      } finally {
+        deferredInstallPrompt = null;
+        setInstallButtonVisibility(false);
+      }
+    });
+  }
+
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    setInstallButtonVisibility(false);
+    showToast('ClubsHub installed', 'You can launch it from your home screen like an app.');
+  });
+
   if (notificationsButton?.dataset.notificationsPage === '1') {
     notificationsButton.addEventListener('click', (event) => {
       event.preventDefault();
@@ -216,7 +261,7 @@
 
   const pollNotifications = async () => {
     const url = window.clubshubNotificationFeedUrl;
-    if (!url) return;
+    if (!url || document.hidden) return;
     try {
       const response = await fetch(url, { credentials: 'same-origin' });
       if (!response.ok) return;
@@ -536,7 +581,7 @@
       window.setTimeout(async () => {
         await pollMessages();
         schedulePoll();
-      }, 1000);
+      }, liveMessagePollIntervalMs);
     };
     schedulePoll();
 
@@ -751,7 +796,7 @@
       window.setTimeout(async () => {
         await pollMessages();
         schedulePoll();
-      }, 1000);
+      }, liveMessagePollIntervalMs);
     };
     schedulePoll();
 

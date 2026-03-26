@@ -33,6 +33,8 @@ python manage.py runserver
 
 Open the app at `http://127.0.0.1:8000/`.
 
+For the installable mobile app version, see `README_MOBILE_APP.md`.
+
 ## Demo users
 
 All demo users use the password `Password@123`.
