@@ -6,6 +6,7 @@
   const appShell = document.querySelector('.app-shell');
   const desktopSidebarQuery = window.matchMedia('(min-width: 1025px)');
   const themeToggle = document.querySelector('[data-theme-toggle]');
+  const themeIcon = document.querySelector('[data-theme-icon]');
   const enableAlertsButton = document.querySelector('[data-enable-browser-notifications]');
   const toastRoot = document.getElementById('toast-root');
   const themeKey = 'clubshub-theme';
@@ -61,6 +62,15 @@
     if (saved) {
       html.setAttribute('data-theme', saved);
     }
+  };
+
+  const syncThemeToggle = () => {
+    if (!themeToggle) return;
+    const isLight = html.getAttribute('data-theme') === 'light';
+    if (themeIcon) {
+      themeIcon.textContent = isLight ? '🌙' : '☀️';
+    }
+    themeToggle.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
   };
 
   const applySidebarState = () => {
@@ -138,11 +148,13 @@
   }
 
   loadTheme();
+  syncThemeToggle();
   if (themeToggle) {
     themeToggle.addEventListener('click', () => {
       const next = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
       html.setAttribute('data-theme', next);
       localStorage.setItem(themeKey, next);
+      syncThemeToggle();
     });
   }
 

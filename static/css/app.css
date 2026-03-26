@@ -169,7 +169,23 @@ html[data-theme="light"] .app-topbar {
 }
 
 .app-search {
+  position: relative;
   min-width: min(40vw, 420px);
+}
+
+.app-search-icon {
+  position: absolute;
+  left: 0.95rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--primary);
+  font-size: 1.25rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.app-search .input {
+  padding-left: 2.8rem;
 }
 
 .badge-pill {
@@ -1280,7 +1296,7 @@ body.modal-open {
 
   .app-topbar-actions {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto;
     gap: 0.65rem;
   }
 
@@ -1326,9 +1342,15 @@ body.modal-open {
   .app-search .input {
     min-height: 3rem;
     border-radius: 20px !important;
-    padding-inline: 1rem;
+    padding-left: 3rem;
+    padding-right: 1rem;
     background: rgba(255, 255, 255, 0.06) !important;
     border-color: rgba(148, 163, 184, 0.16) !important;
+  }
+
+  .app-search-icon {
+    left: 1rem;
+    font-size: 1.45rem;
   }
 
   .app-topbar-button--theme,
@@ -1336,6 +1358,49 @@ body.modal-open {
   .app-topbar-button--profile {
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(110, 168, 254, 0.06)) !important;
     border-color: rgba(148, 163, 184, 0.18) !important;
+  }
+
+  .app-topbar-button--notifications,
+  .app-topbar-button--theme {
+    width: 3.05rem;
+    min-width: 3.05rem;
+    position: relative;
+    padding: 0 !important;
+    gap: 0;
+  }
+
+  .app-topbar-button__icon,
+  .app-topbar-button__emoji {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    font-size: 1.2rem;
+    line-height: 1;
+  }
+
+  .app-topbar-button__label {
+    display: none;
+  }
+
+  .app-topbar-button--profile,
+  .app-topbar-button--logout {
+    min-width: 0;
+    padding-inline: 0.95rem !important;
+  }
+
+  .app-topbar-button--notifications .badge-pill {
+    position: absolute;
+    top: -0.28rem;
+    right: -0.18rem;
+    min-width: 1.15rem;
+    height: 1.15rem;
+    padding: 0 0.25rem;
+    margin-left: 0;
+    background: var(--primary-strong);
+    color: #ffffff;
+    border: 2px solid rgba(8, 17, 31, 0.94);
+    font-size: 0.66rem;
   }
 
   .app-topbar-button--logout {
@@ -1455,12 +1520,18 @@ body.modal-open {
   }
 
   .app-topbar-actions {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto;
     gap: 0.58rem;
   }
 
   .app-topbar-button {
     min-height: 2.85rem;
     font-size: 0.92rem;
+  }
+
+  .app-topbar-button--notifications,
+  .app-topbar-button--theme {
+    width: 2.85rem;
+    min-width: 2.85rem;
   }
 }

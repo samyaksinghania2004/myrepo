@@ -31,23 +31,26 @@
             </a>
             {% if request.user.is_authenticated %}
             <form class="app-search" action="{% url 'core:search' %}" method="get">
+                <span class="app-search-icon" aria-hidden="true">&#8981;</span>
                 <input class="input" type="search" name="q" placeholder="Search clubs, events, open rooms...">
             </form>
             {% endif %}
         </div>
         {% if request.user.is_authenticated %}
         <div class="app-topbar-actions">
-            <button type="button" class="button is-dark is-outlined app-topbar-button app-topbar-button--theme" data-theme-toggle>
-                Toggle theme
-            </button>
-            <a class="button is-dark is-outlined app-topbar-button app-topbar-button--notifications" href="{% url 'core:notifications' %}">
-                Notifications
+            <a class="button is-dark is-outlined app-topbar-button app-topbar-button--profile" href="{% url 'accounts:profile' %}">{{ request.user.display_name }}</a>
+            <a class="button is-danger is-light app-topbar-button app-topbar-button--logout" href="{% url 'accounts:logout' %}">Log out</a>
+            <a class="button is-dark is-outlined app-topbar-button app-topbar-button--notifications" href="{% url 'core:notifications' %}" aria-label="Notifications">
+                <span class="app-topbar-button__icon" aria-hidden="true">&#128276;</span>
+                <span class="app-topbar-button__label">Notifications</span>
                 {% if unread_notifications_count %}
                     <span class="badge-pill">{{ unread_notifications_count }}</span>
                 {% endif %}
             </a>
-            <a class="button is-dark is-outlined app-topbar-button app-topbar-button--profile" href="{% url 'accounts:profile' %}">{{ request.user.display_name }}</a>
-            <a class="button is-danger is-light app-topbar-button app-topbar-button--logout" href="{% url 'accounts:logout' %}">Log out</a>
+            <button type="button" class="button is-dark is-outlined app-topbar-button app-topbar-button--theme" data-theme-toggle aria-label="Toggle theme">
+                <span class="app-topbar-button__emoji" data-theme-icon aria-hidden="true">🌙</span>
+                <span class="app-topbar-button__label">Toggle theme</span>
+            </button>
         </div>
         {% endif %}
     </header>
