@@ -12,7 +12,7 @@
             <span class="tag is-link is-light club-membership-badge">You are {{ membership.get_local_role_display }}</span>
             <form class="club-leave-inline club-leave-inline--mobile" method="post" action="{% url 'clubs_events:club_leave' club.pk %}" data-confirm="Leave {{ club.name }}?">
                 {% csrf_token %}
-                <button class="button is-small club-leave-button" type="submit">Leave club</button>
+                <button class="button is-small club-leave-button" type="submit">Leave group</button>
             </form>
         {% else %}
             <form method="post" action="{% url 'clubs_events:club_join' club.pk %}">
@@ -38,7 +38,7 @@
                     {% if membership and membership.status == 'active' %}
                         <form class="club-leave-menu-item" method="post" action="{% url 'clubs_events:club_leave' club.pk %}" data-confirm="Leave {{ club.name }}?">
                             {% csrf_token %}
-                            <button class="action-menu__item is-danger" type="submit">Leave club</button>
+                            <button class="action-menu__item is-danger" type="submit">Leave group</button>
                         </form>
                     {% endif %}
                 </div>
