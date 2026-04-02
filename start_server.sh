@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# This script is intended for development use only. It starts the Django development server on
 set -Eeuo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
